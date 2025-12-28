@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 export const users = mysqlTable("users", {
   id: varchar("id", { length: 255 }).primaryKey(),
   name: varchar("name", { length: 255 }),
-  email: varchar("email", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).unique(),
   emailVerified: timestamp("email_verified", {
     mode: "date",
     fsp: 3,
