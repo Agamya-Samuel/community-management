@@ -136,6 +136,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+        session.user.email = user.email;
+        session.user.name = user.name;
+        session.user.image = user.image;
         session.user.username = (user as any).username;
       }
       return session;
@@ -143,6 +146,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user, account }) {
       // Allow sign in
       return true;
+    },
+    async redirect({ url, baseUrl }) {
+      // If redirecting to dashboard but user doesn't have email, redirect to complete-profile
+      if (url.includes("/dashboard")) {
+        // We'll handle this in middleware, but this ensures the redirect URL is correct
+        return url;
+      }
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
 });
