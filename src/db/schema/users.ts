@@ -21,6 +21,6 @@ export const users = mysqlTable("users", {
   })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP(3)`)
-    .onUpdateNow(),
+    .$onUpdate(() => new Date()),
 });
 
