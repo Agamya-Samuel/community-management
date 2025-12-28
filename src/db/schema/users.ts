@@ -1,4 +1,5 @@
 import { mysqlTable, varchar, timestamp, text } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
 
 export const users = mysqlTable("users", {
   id: varchar("id", { length: 255 }).primaryKey(),
@@ -17,6 +18,9 @@ export const users = mysqlTable("users", {
   updatedAt: timestamp("updated_at", {
     mode: "date",
     fsp: 3,
-  }).defaultNow().onUpdateNow().notNull(),
+  })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`)
+    .onUpdateNow(),
 });
 
