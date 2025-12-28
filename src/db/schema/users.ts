@@ -10,6 +10,7 @@ export const users = mysqlTable("users", {
     fsp: 3,
   }),
   image: varchar("image", { length: 255 }),
+  username: varchar("username", { length: 255 }).unique(),
   password: varchar("password", { length: 255 }), // Hashed password for credentials provider
   createdAt: timestamp("created_at", {
     mode: "date",
