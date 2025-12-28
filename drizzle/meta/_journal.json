@@ -8,6 +8,13 @@
       "when": 1766911618086,
       "tag": "0000_plain_goblin_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1766912931748,
+      "tag": "0001_cheerful_timeslip",
+      "breakpoints": true
     }
   ]
 }
