@@ -15,7 +15,7 @@ export function OAuthButton({ provider, children }: OAuthButtonProps) {
     setIsLoading(true);
     try {
       await signIn(provider, {
-        callbackUrl: "/",
+        callbackUrl: "/dashboard",
         redirect: true,
       });
     } catch (error) {
