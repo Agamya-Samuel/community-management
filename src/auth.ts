@@ -16,7 +16,7 @@ function Wikimedia(options: {
   return {
     id: "wikimedia",
     name: "Wikimedia",
-    type: "oidc",
+    type: "oauth",
     authorization: {
       url: "https://meta.wikimedia.org/w/rest.php/oauth2/authorize",
       params: {
@@ -31,8 +31,9 @@ function Wikimedia(options: {
       return {
         id: profile.sub || profile.id,
         name: profile.username || profile.name,
-        email: profile.email,
+        email: null, // Wikimedia doesn't provide email by default
         image: profile.picture || profile.avatar,
+        username: profile.username,
       };
     },
   };
@@ -135,8 +136,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+        session.user.username = (user as any).username;
       }
       return session;
+    },
+    async signIn({ user, account }) {
+      // Allow sign in
+      return true;
     },
   },
 });
