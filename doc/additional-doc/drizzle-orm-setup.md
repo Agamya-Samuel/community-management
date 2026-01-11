@@ -157,24 +157,24 @@ The following npm scripts are available for database migrations:
 
 ```bash
 # Generate migration files from schema changes
-pnpm db:generate
+npm run db:generate
 
 # Run migrations
-pnpm db:migrate
+npm run db:migrate
 
 # Push schema changes directly to database (development only)
-pnpm db:push
+npm run db:push
 
 # Open Drizzle Studio (database GUI)
-pnpm db:studio
+npm run db:studio
 ```
 
 ### Workflow
 
 1. **Define your schema** in `src/db/schema/`
-2. **Generate migrations**: `pnpm db:generate`
+2. **Generate migrations**: `npm run db:generate`
 3. **Review generated files** in `./drizzle/` folder
-4. **Apply migrations**: `pnpm db:migrate`
+4. **Apply migrations**: `npm run db:migrate`
 
 ### Migration Files
 

@@ -53,7 +53,7 @@ A scalable, hierarchy-based community management platform that empowers users to
 
 ## 🛠️ Tech Stack
 
-- **Package Manager:** [pnpm](https://pnpm.io/)
+- **Package Manager:** [npm](https://www.npmjs.com/)
 - **Monorepo:** [Turborepo](https://turbo.build/)
 - **Frontend:** [Next.js](https://nextjs.org/) (App Router)
 - **Backend:** Next.js API Routes
@@ -71,7 +71,7 @@ A scalable, hierarchy-based community management platform that empowers users to
 ## 📋 Prerequisites
 
 - Node.js 18+ 
-- pnpm installed globally
+- npm (comes with Node.js)
 - MySQL database
 - (Optional) AWS S3 bucket for file storage
 - (Optional) Google Maps API key
@@ -91,7 +91,7 @@ cd community-management
 
 2. Install dependencies:
 ```bash
-pnpm install
+npm install
 ```
 
 3. Set up environment variables:
@@ -132,18 +132,18 @@ RESEND_API_KEY="your-resend-api-key"
 4. Set up the database:
 ```bash
 # Generate migrations
-pnpm db:generate
+npm run db:generate
 
 # Run migrations
-pnpm db:migrate
+npm run db:migrate
 
 # Or push schema directly (development)
-pnpm db:push
+npm run db:push
 ```
 
 5. Run the development server:
 ```bash
-pnpm dev
+npm run dev
 ```
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -193,14 +193,14 @@ The platform follows a clean, spacious design that evokes trust, growth, and com
 
 ## 📝 Available Scripts
 
-- `pnpm dev` - Start development server
-- `pnpm build` - Build for production
-- `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint
-- `pnpm db:generate` - Generate database migrations
-- `pnpm db:migrate` - Run database migrations
-- `pnpm db:push` - Push schema changes directly (development)
-- `pnpm db:studio` - Open Drizzle Studio (database GUI)
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run db:generate` - Generate database migrations
+- `npm run db:migrate` - Run database migrations
+- `npm run db:push` - Push schema changes directly (development)
+- `npm run db:studio` - Open Drizzle Studio (database GUI)
 
 ---
 

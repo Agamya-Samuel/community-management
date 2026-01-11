@@ -241,7 +241,7 @@ The design should evoke trust, growth, and community.
 ## 8. Technical Considerations
 
 ### 8.1. Technology Stack
-* **Package Manager:** Pnpm
+* **Package Manager:** npm
 * **Monorepo:** Turborepo
 * **Frontend:** Next.js (for SEO on public event pages)
 * **Backend:** Next.js API Routes
