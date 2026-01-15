@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Github } from "lucide-react"
+import { Globe } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -25,9 +25,18 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Authentication functionality removed - Supabase dependencies have been removed
-      // TODO: Implement authentication logic here
-      setError("Authentication is not currently implemented")
+      const { authClient } = await import("@/lib/auth/client")
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: "/dashboard",
+      })
+
+      if (result.error) {
+        setError(result.error.message || "Invalid email or password")
+      } else {
+        router.push("/dashboard")
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
@@ -35,17 +44,48 @@ export default function LoginPage() {
     }
   }
 
-  const handleSocialLogin = async (provider: "google" | "github") => {
+  const handleSocialLogin = async (provider: "google" | "mediawiki") => {
     setSocialLoading(provider)
     setError(null)
 
     try {
-      // Social authentication functionality removed - Supabase dependencies have been removed
-      // TODO: Implement social authentication logic here
-      setError(`${provider} authentication is not currently implemented`)
-      setSocialLoading(null)
+      const { authClient } = await import("@/lib/auth/client")
+      
+      // Google uses signIn.social (built-in provider)
+      // MediaWiki uses signIn.oauth2 (generic OAuth provider)
+      const result = provider === "google"
+        ? await authClient.signIn.social({
+            provider,
+            callbackURL: "/dashboard",
+          })
+        : await authClient.signIn.oauth2({
+            providerId: provider,
+            callbackURL: "/dashboard",
+          })
+
+      // Both methods return { data, error }
+      // On success, it automatically redirects by default
+      // If there's an error, handle it
+      if (result.error) {
+        console.error(`${provider} authentication error:`, result.error)
+        setError(
+          result.error.message || 
+          `${provider} authentication failed. Please check your configuration.`
+        )
+        setSocialLoading(null)
+      } else if (result.data?.url) {
+        // If URL is returned, redirect manually (for cases where auto-redirect is disabled)
+        window.location.href = result.data.url
+      }
+      // If no error and no URL, better-auth should have automatically redirected
+      // If we reach here without redirect, there might be a configuration issue
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      console.error(`${provider} authentication exception:`, error)
+      setError(
+        error instanceof Error 
+          ? error.message 
+          : `${provider} authentication failed. Please check your configuration and environment variables.`
+      )
       setSocialLoading(null)
     }
   }
@@ -101,15 +141,15 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 className="w-full h-11 bg-white hover:bg-gray-50"
-                onClick={() => handleSocialLogin("github")}
-                disabled={socialLoading === "github" || isLoading}
+                onClick={() => handleSocialLogin("mediawiki")}
+                disabled={socialLoading === "mediawiki" || isLoading}
               >
-                {socialLoading === "github" ? (
+                {socialLoading === "mediawiki" ? (
                   "Connecting..."
                 ) : (
                   <>
-                    <Github className="w-5 h-5 mr-2" />
-                    Continue with GitHub
+                    <Globe className="w-5 h-5 mr-2" />
+                    Continue with MediaWiki
                   </>
                 )}
               </Button>
