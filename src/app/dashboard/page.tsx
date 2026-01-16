@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
   Calendar,
-  UserPlus,
   Settings,
   Plus,
   ExternalLink,
@@ -25,9 +24,8 @@ import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion"
  * Dashboard page showing user's community and event activity
  * 
  * Displays:
- * - Communities where user is organizer/admin
- * - Events where user has participated
- * - Communities where user is a member
+ * - Community section with browse and create options
+ * - Event section with browse and create options
  */
 export default async function DashboardPage() {
   // Get session from better-auth
@@ -60,46 +58,39 @@ export default async function DashboardPage() {
   // TODO: Once community and event tables are created, replace these placeholder queries
   // For now, we'll show empty states with helpful messages
   
-  // Placeholder: Communities where user is organizer/admin
-  // This will query CommunityAdmin table with roles: 'owner', 'organizer', 'coorganizer', 'event_organizer'
-  const organizerCommunities: any[] = [];
+  // Placeholder: All communities where user is involved (organizer or member)
+  // This will query both CommunityAdmin and CommunityMember tables
+  const userCommunities: any[] = [];
   // Example query (commented out until tables exist):
   // const organizerCommunities = await db.query.communityAdmin.findMany({
-  //   where: and(
-  //     eq(schema.communityAdmin.userId, user.id),
-  //     inArray(schema.communityAdmin.role, ['owner', 'organizer', 'coorganizer', 'event_organizer'])
-  //   ),
-  //   with: {
-  //     community: true
-  //   }
+  //   where: eq(schema.communityAdmin.userId, user.id),
+  //   with: { community: true }
   // });
+  // const memberCommunities = await db.query.communityMember.findMany({
+  //   where: eq(schema.communityMember.userId, user.id),
+  //   with: { community: true }
+  // });
+  // const userCommunities = [...organizerCommunities, ...memberCommunities];
 
-  // Placeholder: Events where user has participated
-  // This will query EventMember table
-  const participatedEvents: any[] = [];
+  // Placeholder: Events where user has participated or created
+  // This will query EventMember and Event tables
+  const userEvents: any[] = [];
   // Example query (commented out until tables exist):
   // const participatedEvents = await db.query.eventMember.findMany({
   //   where: eq(schema.eventMember.userId, user.id),
   //   with: {
   //     event: {
-  //       with: {
-  //         community: true
-  //       }
+  //       with: { community: true }
   //     }
   //   },
   //   orderBy: desc(schema.eventMember.joinedAt)
   // });
-
-  // Placeholder: Communities where user is a member (not organizer)
-  // This will query CommunityMember table or filter CommunityAdmin for non-organizer roles
-  const memberCommunities: any[] = [];
-  // Example query (commented out until tables exist):
-  // const memberCommunities = await db.query.communityMember.findMany({
-  //   where: eq(schema.communityMember.userId, user.id),
-  //   with: {
-  //     community: true
-  //   }
+  // const createdEvents = await db.query.event.findMany({
+  //   where: eq(schema.event.createdBy, user.id),
+  //   with: { community: true },
+  //   orderBy: desc(schema.event.createdAt)
   // });
+  // const userEvents = [...participatedEvents, ...createdEvents];
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,50 +118,51 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {/* Communities as Organizer Section */}
+          {/* Community Section */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    My Communities (Organizer)
-                  </CardTitle>
-                  <CardDescription>
-                    Communities where you are an organizer, co-organizer, or admin
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/communities/create">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Community
-                  </Link>
-                </Button>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Community
+              </CardTitle>
+              <CardDescription>
+                Browse existing communities or create your own
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {organizerCommunities.length === 0 ? (
+              {userCommunities.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">You haven't organized any communities yet</p>
+                  <p className="text-muted-foreground mb-2">You haven't joined any communities yet</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Create a community to start organizing events and connecting with members
+                    Browse existing communities or create your own to start organizing events
                   </p>
-                  <Button asChild>
-                    <Link href="/communities/create">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Your First Community
-                    </Link>
-                  </Button>
+                  <div className="flex items-center justify-center gap-3">
+                    <Button variant="outline" asChild>
+                      <Link href="/communities">
+                        Browse Communities
+                      </Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/communities/create">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create My Community
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {organizerCommunities.map((item) => (
+                  {userCommunities.map((item) => (
                     <Card key={item.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-foreground">{item.community?.name || "Community"}</h3>
-                          <Badge variant="secondary">{item.role}</Badge>
+                          <h3 className="font-semibold text-foreground">
+                            {item.community?.name || "Community"}
+                          </h3>
+                          <Badge variant={item.role ? "secondary" : "outline"}>
+                            {item.role || "Member"}
+                          </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                           {item.community?.description || "No description"}
@@ -182,11 +174,13 @@ export default async function DashboardPage() {
                               <ExternalLink className="w-3 h-3 ml-1" />
                             </Link>
                           </Button>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/communities/${item.communityId}/manage`}>
-                              Manage
-                            </Link>
-                          </Button>
+                          {item.role && (
+                            <Button variant="outline" size="sm" asChild>
+                              <Link href={`/communities/${item.communityId}/manage`}>
+                                Manage
+                              </Link>
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -196,43 +190,42 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Events Participated Section */}
+          {/* Event Section */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    My Events
-                  </CardTitle>
-                  <CardDescription>
-                    Events you have registered for or participated in
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/events">
-                    Browse Events
-                  </Link>
-                </Button>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Event
+              </CardTitle>
+              <CardDescription>
+                Browse existing events or create your own
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              {participatedEvents.length === 0 ? (
+              {userEvents.length === 0 ? (
                 <div className="text-center py-12">
                   <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground mb-2">You haven't joined any events yet</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Discover and join events from communities you're part of
+                    Browse existing events or create your own to start connecting with people
                   </p>
-                  <Button asChild>
-                    <Link href="/events">
-                      Browse Events
-                    </Link>
-                  </Button>
+                  <div className="flex items-center justify-center gap-3">
+                    <Button variant="outline" asChild>
+                      <Link href="/events">
+                        Browse Events
+                      </Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/events/create">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create My Event
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {participatedEvents.map((item) => (
+                  {userEvents.map((item) => (
                     <Card key={item.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
@@ -272,68 +265,6 @@ export default async function DashboardPage() {
                             </Link>
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Communities as Member Section */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <UserPlus className="w-5 h-5" />
-                    My Communities (Member)
-                  </CardTitle>
-                  <CardDescription>
-                    Communities you have joined as a member
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/communities">
-                    Discover Communities
-                  </Link>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {memberCommunities.length === 0 ? (
-                <div className="text-center py-12">
-                  <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">You haven't joined any communities yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Join communities to discover events and connect with like-minded people
-                  </p>
-                  <Button asChild>
-                    <Link href="/communities">
-                      Discover Communities
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {memberCommunities.map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-foreground">
-                            {item.community?.name || "Community"}
-                          </h3>
-                          <Badge variant="outline">Member</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {item.community?.description || "No description"}
-                        </p>
-                        <Button variant="outline" size="sm" className="w-full" asChild>
-                          <Link href={`/communities/${item.communityId}`}>
-                            View Community
-                            <ExternalLink className="w-3 h-3 ml-1" />
-                          </Link>
-                        </Button>
                       </CardContent>
                     </Card>
                   ))}
