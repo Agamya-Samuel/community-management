@@ -19,25 +19,25 @@ export default async function VerifyEmailPage({
   const error = params?.error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center space-y-4">
             <div
               className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${
                 isSuccess
-                  ? "bg-green-100"
+                  ? "bg-primary/10"
                   : error
-                  ? "bg-red-100"
-                  : "bg-blue-100"
+                  ? "bg-destructive/10"
+                  : "bg-secondary/10"
               }`}
             >
               {isSuccess ? (
-                <CheckCircle className="w-8 h-8 text-green-600" />
+                <CheckCircle className="w-8 h-8 text-primary" />
               ) : error ? (
-                <XCircle className="w-8 h-8 text-red-600" />
+                <XCircle className="w-8 h-8 text-destructive" />
               ) : (
-                <Mail className="w-8 h-8 text-blue-600" />
+                <Mail className="w-8 h-8 text-secondary" />
               )}
             </div>
             <CardTitle className="text-2xl font-semibold">
@@ -61,8 +61,8 @@ export default async function VerifyEmailPage({
           </CardHeader>
           <CardContent className="space-y-4">
             {error && error !== "missing_params" && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-800">
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-sm text-destructive-foreground">
                   {error === "invalid_token"
                     ? "The verification token is invalid or has expired. Verification links expire after 24 hours."
                     : "An error occurred during email verification."}

@@ -70,16 +70,16 @@ export default async function DashboardPage() {
     : "Unknown";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-            <p className="text-white mt-1">Welcome back, {user.name || "User"}!</p>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Welcome back, {user.name || "User"}!</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" className="text-white border-slate-600 hover:bg-slate-700 hover:text-white" asChild>
+            <Button variant="outline" asChild>
               <Link href="/dashboard/settings/account">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
@@ -91,13 +91,13 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User Profile Card */}
-          <Card className="lg:col-span-2 bg-slate-800 text-white border-slate-700">
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
                 Profile Information
               </CardTitle>
-              <CardDescription className="text-white/80">Your account details and verification status</CardDescription>
+              <CardDescription>Your account details and verification status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Profile Picture and Name */}
@@ -106,25 +106,25 @@ export default async function DashboardPage() {
                   <img
                     src={user.image}
                     alt={user.name || "User"}
-                    className="w-20 h-20 rounded-full border-2 border-slate-700"
+                    className="w-20 h-20 rounded-full border-2 border-border"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground text-2xl font-bold">
                     {(user.name || user.email || "U")[0].toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <h2 className="text-2xl font-semibold text-white">
+                  <h2 className="text-2xl font-semibold text-foreground">
                     {user.name || "No name set"}
                   </h2>
                   {user.email && (
-                    <p className="text-white flex items-center gap-2 mt-1">
+                    <p className="text-muted-foreground flex items-center gap-2 mt-1">
                       <Mail className="w-4 h-4" />
                       {user.email}
                     </p>
                   )}
                   {user.mediawikiUsername && (
-                    <p className="text-white flex items-center gap-2 mt-1">
+                    <p className="text-muted-foreground flex items-center gap-2 mt-1">
                       <Globe className="w-4 h-4" />
                       @{user.mediawikiUsername}
                     </p>
@@ -135,23 +135,23 @@ export default async function DashboardPage() {
               {/* Verification Status */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Email Verification */}
-                <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-white" />
+                    <Mail className="w-5 h-5 text-foreground" />
                     <div>
-                      <p className="font-medium text-white">Email</p>
-                      <p className="text-sm text-white">
+                      <p className="font-medium text-foreground">Email</p>
+                      <p className="text-sm text-muted-foreground">
                         {user.email ? user.email : "Not set"}
                       </p>
                     </div>
                   </div>
                   {user.emailVerified ? (
-                    <Badge variant="default" className="bg-green-500 text-white">
+                    <Badge variant="default">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Verified
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="text-white bg-slate-700">
+                    <Badge variant="secondary">
                       <XCircle className="w-3 h-3 mr-1" />
                       Unverified
                     </Badge>
@@ -159,23 +159,23 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* MediaWiki Username */}
-                <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Globe className="w-5 h-5 text-white" />
+                    <Globe className="w-5 h-5 text-foreground" />
                     <div>
-                      <p className="font-medium text-white">MediaWiki</p>
-                      <p className="text-sm text-white">
+                      <p className="font-medium text-foreground">MediaWiki</p>
+                      <p className="text-sm text-muted-foreground">
                         {user.mediawikiUsername || "Not connected"}
                       </p>
                     </div>
                   </div>
                   {user.mediawikiUsername ? (
-                    <Badge variant="default" className="bg-green-500 text-white">
+                    <Badge variant="default">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Connected
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="text-white bg-slate-700">
+                    <Badge variant="secondary">
                       <XCircle className="w-3 h-3 mr-1" />
                       Not Connected
                     </Badge>
@@ -184,21 +184,21 @@ export default async function DashboardPage() {
               </div>
 
               {/* Account Details */}
-              <div className="space-y-3 pt-4 border-t border-slate-700">
-                <div className="flex items-center gap-3 text-white">
+              <div className="space-y-3 pt-4 border-t border-border">
+                <div className="flex items-center gap-3 text-foreground">
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm">Member since: {createdAt}</span>
                 </div>
                 {user.timezone && (
-                  <div className="flex items-center gap-3 text-white">
+                  <div className="flex items-center gap-3 text-foreground">
                     <Globe className="w-4 h-4" />
                     <span className="text-sm">Timezone: {user.timezone}</span>
                   </div>
                 )}
                 {user.bio && (
                   <div className="pt-2">
-                    <p className="text-sm font-medium text-white mb-1">Bio</p>
-                    <p className="text-sm text-white">{user.bio}</p>
+                    <p className="text-sm font-medium text-foreground mb-1">Bio</p>
+                    <p className="text-sm text-muted-foreground">{user.bio}</p>
                   </div>
                 )}
               </div>
@@ -206,17 +206,17 @@ export default async function DashboardPage() {
           </Card>
 
           {/* Linked Accounts Card */}
-          <Card className="bg-slate-800 text-white border-slate-700">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-white">Authentication Methods</CardTitle>
-              <CardDescription className="text-white/80">Manage your linked accounts</CardDescription>
+              <CardTitle>Authentication Methods</CardTitle>
+              <CardDescription>Manage your linked accounts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Google Account */}
-              <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
-                    <svg className="w-5 h-5 text-white" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center border border-border">
+                    <svg className="w-5 h-5 text-foreground" viewBox="0 0 24 24">
                       <path
                         fill="currentColor"
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -235,59 +235,59 @@ export default async function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <span className="font-medium text-white">Google</span>
+                  <span className="font-medium text-foreground">Google</span>
                 </div>
                 {hasGoogle ? (
-                  <Badge variant="default" className="bg-green-500 text-white">
+                  <Badge variant="default">
                     Linked
                   </Badge>
                 ) : (
-                  <Button variant="outline" size="sm" className="text-white border-slate-600 hover:bg-slate-700 hover:text-white" asChild>
+                  <Button variant="outline" size="sm" asChild>
                     <Link href="/dashboard/settings/account">Link</Link>
                   </Button>
                 )}
               </div>
 
               {/* MediaWiki Account */}
-              <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
-                    <Globe className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center border border-border">
+                    <Globe className="w-4 h-4 text-foreground" />
                   </div>
-                  <span className="font-medium text-white">MediaWiki</span>
+                  <span className="font-medium text-foreground">MediaWiki</span>
                 </div>
                 {hasMediaWiki ? (
-                  <Badge variant="default" className="bg-green-500 text-white">
+                  <Badge variant="default">
                     Linked
                   </Badge>
                 ) : (
-                  <Button variant="outline" size="sm" className="text-white border-slate-600 hover:bg-slate-700 hover:text-white" asChild>
+                  <Button variant="outline" size="sm" asChild>
                     <Link href="/dashboard/settings/account">Link</Link>
                   </Button>
                 )}
               </div>
 
               {/* Email/Password Account */}
-              <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
-                    <Mail className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center border border-border">
+                    <Mail className="w-4 h-4 text-foreground" />
                   </div>
-                  <span className="font-medium text-white">Email/Password</span>
+                  <span className="font-medium text-foreground">Email/Password</span>
                 </div>
                 {hasEmailPassword ? (
-                  <Badge variant="default" className="bg-green-500 text-white">
+                  <Badge variant="default">
                     Linked
                   </Badge>
                 ) : (
-                  <Button variant="outline" size="sm" className="text-white border-slate-600 hover:bg-slate-700 hover:text-white" asChild>
+                  <Button variant="outline" size="sm" asChild>
                     <Link href="/dashboard/settings/account">Link</Link>
                   </Button>
                 )}
               </div>
 
-              <div className="pt-4 border-t border-slate-700">
-                <Button variant="outline" className="w-full text-white border-slate-600 hover:bg-slate-700 hover:text-white" asChild>
+              <div className="pt-4 border-t border-border">
+                <Button variant="outline" className="w-full" asChild>
                   <Link href="/dashboard/settings/account">
                     <Settings className="w-4 h-4 mr-2" />
                     Manage Accounts

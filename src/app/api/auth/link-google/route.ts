@@ -58,12 +58,12 @@ export async function GET(request: NextRequest) {
 
     // Better-auth handles the OAuth callback automatically
     // We can add custom logic here if needed after the account is linked
-    // For now, redirect to account settings
-    return NextResponse.redirect(new URL("/dashboard/settings/account", request.url));
+    // Redirect to dashboard after successful account linking
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {
     console.error("Google OAuth callback error:", error);
     return NextResponse.redirect(
-      new URL("/dashboard/settings/account?error=link_failed", request.url)
+      new URL("/dashboard?error=link_failed", request.url)
     );
   }
 }

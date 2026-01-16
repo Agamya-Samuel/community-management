@@ -42,7 +42,7 @@ export default function CompleteProfilePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border-0">
           <CardHeader>

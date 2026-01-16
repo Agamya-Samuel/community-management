@@ -94,11 +94,11 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Create account</h1>
-          <p className="text-slate-600">Join EventFlow and start managing events effortlessly</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Create account</h1>
+          <p className="text-muted-foreground">Join EventFlow and start managing events effortlessly</p>
         </div>
 
         <Card className="shadow-lg border-0">
@@ -110,7 +110,7 @@ export default function SignUpPage() {
             <div className="space-y-3 mb-6">
               <Button
                 variant="outline"
-                className="w-full h-11 bg-white hover:bg-gray-50"
+                className="w-full h-11 bg-card hover:bg-muted text-foreground"
                 onClick={() => handleSocialSignUp("google")}
                 disabled={socialLoading === "google" || isLoading}
               >
@@ -143,7 +143,7 @@ export default function SignUpPage() {
 
               <Button
                 variant="outline"
-                className="w-full h-11 bg-white hover:bg-gray-50"
+                className="w-full h-11 bg-card hover:bg-muted text-foreground"
                 onClick={() => handleSocialSignUp("mediawiki")}
                 disabled={socialLoading === "mediawiki" || isLoading}
               >
@@ -160,10 +160,10 @@ export default function SignUpPage() {
 
             <div className="relative mb-6">
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+                <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">Or continue with email</span>
+                <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
               </div>
             </div>
 
@@ -205,11 +205,11 @@ export default function SignUpPage() {
                 />
               </div>
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">{error}</div>
+                <div className="p-3 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-md">{error}</div>
               )}
               <Button
                 type="submit"
-                className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                className="w-full h-11"
                 disabled={isLoading || socialLoading !== null}
               >
                 {isLoading ? "Creating account..." : "Create account"}
@@ -217,14 +217,14 @@ export default function SignUpPage() {
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-slate-600">Already have an account? </span>
-              <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              <span className="text-muted-foreground">Already have an account? </span>
+              <Link href="/auth/login" className="text-primary hover:text-primary/80 font-medium">
                 Sign in
               </Link>
             </div>
 
             <div className="mt-4 text-center">
-              <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
+              <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
                 ← Back to home
               </Link>
             </div>

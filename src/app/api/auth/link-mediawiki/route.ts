@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // For server-side linking, we need to proxy the request to better-auth's oauth2/link endpoint
     // Note: Client-side linking (calling /api/auth/oauth2/link directly) is recommended
     const body = await request.json().catch(() => ({}));
-    const callbackURL = body.callbackURL || "/dashboard/settings/account";
+    const callbackURL = body.callbackURL || "/dashboard";
 
     // Return a response telling the client to call the endpoint directly
     // This avoids session cookie issues with internal requests
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
 
     // Better-auth handles the OAuth callback automatically
     // The database hook will handle setting mediawikiUsername and mediawikiUsernameVerifiedAt
-    // Redirect to account settings
-    return NextResponse.redirect(new URL("/dashboard/settings/account", request.url));
+    // Redirect to dashboard after successful account linking
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {
     console.error("MediaWiki OAuth callback error:", error);
     return NextResponse.redirect(
-      new URL("/dashboard/settings/account?error=link_failed", request.url)
+      new URL("/dashboard?error=link_failed", request.url)
     );
   }
 }
