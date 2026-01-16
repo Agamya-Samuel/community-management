@@ -43,7 +43,7 @@ export default function SignUpPage() {
         email,
         password,
         name: email.split("@")[0], // Use email prefix as default name
-        callbackURL: "/dashboard",
+        callbackURL: "/auth/complete-profile",
       })
 
       if (result.error) {
@@ -71,11 +71,11 @@ export default function SignUpPage() {
       const result = provider === "google"
         ? await authClient.signIn.social({
             provider,
-            callbackURL: "/dashboard",
+            callbackURL: "/auth/complete-profile",
           })
         : await authClient.signIn.oauth2({
             providerId: provider,
-            callbackURL: "/dashboard",
+            callbackURL: "/auth/complete-profile",
           })
 
       // Both methods return { data, error }
