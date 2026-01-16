@@ -29,13 +29,14 @@ export default function LoginPage() {
       const result = await authClient.signIn.email({
         email,
         password,
-        callbackURL: "/dashboard",
+        callbackURL: "/auth/complete-profile",
       })
 
       if (result.error) {
         setError(result.error.message || "Invalid email or password")
       } else {
-        router.push("/dashboard")
+        // Redirect to profile completion first, which will then redirect to dashboard if profile is complete
+        router.push("/auth/complete-profile")
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
@@ -56,11 +57,11 @@ export default function LoginPage() {
       const result = provider === "google"
         ? await authClient.signIn.social({
             provider,
-            callbackURL: "/dashboard",
+            callbackURL: "/auth/complete-profile",
           })
         : await authClient.signIn.oauth2({
             providerId: provider,
-            callbackURL: "/dashboard",
+            callbackURL: "/auth/complete-profile",
           })
 
       // Both methods return { data, error }

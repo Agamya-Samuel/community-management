@@ -1,85 +1,47 @@
-"use client"
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { auth } from "@/lib/auth/config";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion";
+import { CompleteProfileForm } from "@/components/auth/complete-profile-form";
 
 /**
  * Profile completion page
+ * 
+ * This page is shown when users first log in via any channel.
+ * It checks if the profile needs completion:
+ * - If profile is complete, redirects to dashboard
+ * - If profile needs completion, shows the completion form
  * 
  * Different flows based on authentication method:
  * - MediaWiki users: Add email, optional name and bio
  * - Email/Password users: Verify email, link Google, link MediaWiki
  * - Google users: Link MediaWiki
  */
-export default function CompleteProfilePage() {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+export default async function CompleteProfilePage() {
+  // Get session from better-auth
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  const handleAddEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    try {
-      const response = await fetch("/api/auth/add-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+  // Redirect to login if not authenticated
+  if (!session?.user) {
+    redirect("/auth/login");
+  }
 
-      if (response.ok) {
-        router.push("/auth/verify-email?email_added=true");
-      }
-    } catch (error) {
-      console.error("Failed to add email:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const user = session.user;
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <Card className="shadow-lg border-0">
-          <CardHeader>
-            <CardTitle>Complete Your Profile</CardTitle>
-            <CardDescription>
-              Add your email address to receive notifications and enable account recovery
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddEmail} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Adding..." : "Add Email"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => router.push("/dashboard")}
-              >
-                Skip for now
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+  // Check if user needs to complete profile
+  // If profile is already complete, redirect to dashboard
+  const needsCompletion = await shouldRedirectToCompletion(user.id);
+  
+  // Also check for temporary email (MediaWiki users)
+  const hasTemporaryEmail = user.email && user.email.includes('@temp.eventflow.local');
+  
+  // If profile doesn't need completion and no temporary email, redirect to dashboard
+  if (!needsCompletion && !hasTemporaryEmail) {
+    redirect("/dashboard");
+  }
+
+  // Show profile completion form
+  return <CompleteProfileForm user={user} />;
 }
-
