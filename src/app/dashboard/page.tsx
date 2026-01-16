@@ -43,6 +43,13 @@ export default async function DashboardPage() {
 
   const user = session.user;
 
+  // CRITICAL: Check if user has temporary MediaWiki email
+  // If email matches pattern mediawiki-*@temp.eventflow.local, redirect to complete profile
+  if (user.email && user.email.includes('@temp.eventflow.local')) {
+    console.log("User with temporary email detected, redirecting to complete profile:", user.email);
+    redirect("/auth/complete-profile");
+  }
+
   // Fetch linked accounts from database
   const linkedAccounts = await db.query.accounts.findMany({
     where: eq(schema.accounts.userId, user.id),
