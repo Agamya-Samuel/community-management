@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { fetchMediaWikiUsernameFromAPI } from "@/lib/auth/mediawiki-utils";
+import { isAdmin } from "@/lib/auth/admin-utils";
+import { Shield } from "lucide-react";
 
 /**
  * Profile page showing logged-in user details
@@ -53,6 +56,20 @@ export default async function ProfilePage() {
   const hasMediaWiki = linkedAccounts.some(acc => acc.providerId === "mediawiki");
   const hasEmailPassword = linkedAccounts.some(acc => acc.providerId === "credentials");
 
+  // Fetch MediaWiki username from API if account is linked
+  // This ensures we always show the correct, up-to-date username
+  let mediawikiUsername = user.mediawikiUsername || null;
+  if (hasMediaWiki) {
+    const apiUsername = await fetchMediaWikiUsernameFromAPI(user.id);
+    if (apiUsername) {
+      // Use the API-fetched username (it's more accurate)
+      mediawikiUsername = apiUsername;
+    }
+  }
+
+  // Check if user is admin
+  const userIsAdmin = await isAdmin(user.id);
+
   // Format dates
   const createdAt = user.createdAt 
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -77,6 +94,14 @@ export default async function ProfilePage() {
                 Dashboard
               </Link>
             </Button>
+            {userIsAdmin && (
+              <Button variant="outline" asChild>
+                <Link href="/admin/subscription-requests">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin Panel
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" asChild>
               <Link href="/dashboard/settings/account">
                 <Settings className="w-4 h-4 mr-2" />
@@ -112,19 +137,27 @@ export default async function ProfilePage() {
                   </div>
                 )}
                 <div>
-                  <h2 className="text-2xl font-semibold text-foreground">
-                    {user.name || "No name set"}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl font-semibold text-foreground">
+                      {user.name || "No name set"}
+                    </h2>
+                    {userIsAdmin && (
+                      <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">
+                        <Shield className="w-3 h-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+                  </div>
                   {user.email && (
                     <p className="text-muted-foreground flex items-center gap-2 mt-1">
                       <Mail className="w-4 h-4" />
                       {user.email}
                     </p>
                   )}
-                  {user.mediawikiUsername && (
+                  {mediawikiUsername && (
                     <p className="text-muted-foreground flex items-center gap-2 mt-1">
                       <Globe className="w-4 h-4" />
-                      @{user.mediawikiUsername}
+                      @{mediawikiUsername}
                     </p>
                   )}
                 </div>
@@ -163,11 +196,11 @@ export default async function ProfilePage() {
                     <div>
                       <p className="font-medium text-foreground">MediaWiki</p>
                       <p className="text-sm text-muted-foreground">
-                        {user.mediawikiUsername || "Not connected"}
+                        {mediawikiUsername || "Not connected"}
                       </p>
                     </div>
                   </div>
-                  {user.mediawikiUsername ? (
+                  {mediawikiUsername ? (
                     <Badge variant="default">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Connected

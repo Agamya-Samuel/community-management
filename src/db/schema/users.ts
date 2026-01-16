@@ -67,6 +67,17 @@ export const users = mysqlTable("users", {
   // Bio or description
   bio: text("bio"),
   
+  // User role: "user" (default) or "admin"
+  // Admins can manage subscription requests and have platform-wide permissions
+  role: varchar("role", { length: 50 }).default("user").notNull(),
+  
+  // User type/role: registered_user, premium_subscriber, or platform_admin
+  // Default is registered_user (free tier)
+  userType: varchar("user_type", { length: 50 }).default("registered_user").notNull(),
+  
+  // Foreign key to active subscription (null if no active subscription)
+  subscriptionId: varchar("subscription_id", { length: 255 }),
+  
   // Timestamps
   createdAt: timestamp("created_at", {
     mode: "date",

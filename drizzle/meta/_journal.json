@@ -5,8 +5,15 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1768553403642,
-      "tag": "0000_tricky_wendigo",
+      "when": 1768573430137,
+      "tag": "0000_special_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1768574689656,
+      "tag": "0001_faithful_yellow_claw",
       "breakpoints": true
     }
   ]

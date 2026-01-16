@@ -17,8 +17,10 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion";
+import { hasActiveSubscription } from "@/lib/subscription/utils";
+import { Crown } from "lucide-react";
 
 /**
  * Dashboard page showing user's community and event activity
@@ -40,6 +42,9 @@ export default async function DashboardPage() {
 
   const user = session.user;
 
+  // Check subscription status
+  const hasSubscription = await hasActiveSubscription(user.id);
+
   // CRITICAL: Check if user has temporary MediaWiki email
   // If email matches pattern mediawiki-*@temp.eventflow.local, redirect to complete profile
   if (user.email && user.email.includes('@temp.eventflow.local')) {
@@ -55,22 +60,48 @@ export default async function DashboardPage() {
     redirect("/auth/complete-profile");
   }
 
-  // TODO: Once community and event tables are created, replace these placeholder queries
-  // For now, we'll show empty states with helpful messages
-  
-  // Placeholder: All communities where user is involved (organizer or member)
-  // This will query both CommunityAdmin and CommunityMember tables
-  const userCommunities: any[] = [];
-  // Example query (commented out until tables exist):
-  // const organizerCommunities = await db.query.communityAdmin.findMany({
-  //   where: eq(schema.communityAdmin.userId, user.id),
-  //   with: { community: true }
-  // });
-  // const memberCommunities = await db.query.communityMember.findMany({
-  //   where: eq(schema.communityMember.userId, user.id),
-  //   with: { community: true }
-  // });
-  // const userCommunities = [...organizerCommunities, ...memberCommunities];
+  // Fetch all communities where user has admin role (owner, organizer, etc.)
+  // Users who create a community automatically become owners (stored in communityAdmins table)
+  const adminCommunities = await db
+    .select({
+      // Admin relationship fields
+      adminId: schema.communityAdmins.id,
+      role: schema.communityAdmins.role,
+      adminCommunityId: schema.communityAdmins.communityId,
+      assignedAt: schema.communityAdmins.assignedAt,
+      // Community details
+      communityId: schema.communities.id,
+      communityName: schema.communities.name,
+      communityDescription: schema.communities.description,
+      communityPhoto: schema.communities.photo,
+      parentCommunityId: schema.communities.parentCommunityId,
+      communityCreatedAt: schema.communities.createdAt,
+      communityUpdatedAt: schema.communities.updatedAt,
+    })
+    .from(schema.communityAdmins)
+    .innerJoin(
+      schema.communities,
+      eq(schema.communityAdmins.communityId, schema.communities.id)
+    )
+    .where(eq(schema.communityAdmins.userId, user.id))
+    .orderBy(desc(schema.communityAdmins.assignedAt));
+
+  // Format communities for display
+  // Map the query result to match the expected structure used in the UI
+  const userCommunities = adminCommunities.map((item) => ({
+    id: item.adminId,
+    role: item.role,
+    communityId: item.communityId,
+    community: {
+      id: item.communityId,
+      name: item.communityName,
+      description: item.communityDescription,
+      photo: item.communityPhoto,
+      parentCommunityId: item.parentCommunityId,
+      createdAt: item.communityCreatedAt,
+      updatedAt: item.communityUpdatedAt,
+    },
+  }));
 
   // Placeholder: Events where user has participated or created
   // This will query EventMember and Event tables
@@ -102,6 +133,21 @@ export default async function DashboardPage() {
             <p className="text-muted-foreground mt-1">Welcome back, {user.name || "User"}!</p>
           </div>
           <div className="flex items-center gap-3">
+            {hasSubscription ? (
+              <Button variant="outline" asChild>
+                <Link href="/subscription/manage">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Premium
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/subscription/upgrade">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Upgrade to Premium
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" asChild>
               <Link href="/dashboard/profile">
                 Profile
@@ -154,7 +200,21 @@ export default async function DashboardPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {userCommunities.map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow">
+                    <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                      {/* Community Image */}
+                      {item.community?.photo ? (
+                        <div className="w-full h-48 relative overflow-hidden bg-muted">
+                          <img
+                            src={item.community.photo}
+                            alt={item.community.name || "Community"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                          <Users className="w-16 h-16 text-muted-foreground" />
+                        </div>
+                      )}
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
                           <h3 className="font-semibold text-foreground">
