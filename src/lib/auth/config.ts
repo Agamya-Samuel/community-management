@@ -121,6 +121,9 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true, // Allow users to link multiple authentication methods
+      // CRITICAL: Allow different emails for account linking
+      // MediaWiki emails may differ from Google emails - we link by username only
+      allowDifferentEmails: true, // Prevent email mismatch errors
     },
     // Field mappings - better-auth uses accountId/providerId, we also have providerAccountId/provider
     // We'll sync these in database hooks
@@ -280,26 +283,36 @@ export const auth = betterAuth({
               // The 'sub' is the central user ID and is the proper unique identifier
               // We'll store the username separately in our custom user fields
               
-              // CRITICAL FIX: Handle missing email for MediaWiki users
-              // Better-Auth REQUIRES email field for user creation
-              // Solution: Create a placeholder email that user must update
-              // Format: mediawiki-{sub}@temp.local (guaranteed unique by sub)
-              const userEmail = data.email || `mediawiki-${data.sub}@temp.eventflow.local`;
-              const needsEmailUpdate = !data.email; // Flag for profile completion
+              // CRITICAL FIX: For account linking, DO NOT use MediaWiki email
+              // Only fetch username from MediaWiki, keep existing Google email
+              // 
+              // Strategy:
+              // 1. Always use placeholder email (based on username) to avoid conflicts
+              // 2. Account creation hook will detect account linking and restore original email
+              // 3. Better-Auth's allowDifferentEmails: true allows linking to proceed
+              // 4. Only MediaWiki username is stored, email remains unchanged
+              //
+              // Format: mediawiki-{username}@temp.eventflow.local (unique per username)
+              // This allows us to extract the username later in the hook
+              const userEmail = `mediawiki-${data.username}@temp.eventflow.local`;
+              const needsEmailUpdate = true; // Always flag as needing update since we use placeholder
               
-              console.log(`MediaWiki user email status: ${needsEmailUpdate ? 'NEEDS UPDATE (temp email)' : 'provided'}`);
+              console.log(`MediaWiki OAuth: ONLY fetching username (${data.username}), ignoring email`);
+              console.log(`MediaWiki email: Using placeholder (${userEmail}) - will be replaced with existing email during account linking`);
               
               return {
                 id: data.sub, // FIXED: Use sub (central user ID) as account identifier
-                email: userEmail, // Real email or temporary placeholder
+                email: userEmail, // Placeholder email - hook will restore original email for account linking
                 name: data.realname || data.username, // Use realname if available, otherwise username
                 image: undefined, // MediaWiki OAuth doesn't provide profile image URL
-                emailVerified: needsEmailUpdate ? false : (data.confirmed_email || false), // Temp emails are unverified
+                emailVerified: false, // Placeholder emails are always unverified
                 // Store username in raw data for later extraction
                 raw: {
                   username: data.username,
                   sub: data.sub,
                   needsEmailUpdate: needsEmailUpdate, // Flag for UI
+                  // Store original MediaWiki email for reference (but we don't use it)
+                  originalEmail: data.email || null,
                   ...data,
                 },
               };
@@ -335,63 +348,86 @@ export const auth = betterAuth({
               })
               .where(eq(schema.accounts.id, account.id));
 
-            // FIXED: Handle MediaWiki account - extract username from session/context
+            // FIXED: Handle MediaWiki account - extract username and preserve existing email
             // This works for both new user sign-up AND existing user account linking
+            // CRITICAL: For account linking, we MUST preserve the existing Google email
             if (account.providerId === "mediawiki") {
-              console.log("MediaWiki account created, extracting username...", {
+              console.log("MediaWiki account created, extracting username and preserving email...", {
                 accountId: account.id,
                 userId: account.userId,
               });
 
-              // The username should be available in the session data
-              // We need to fetch it from the account or session
-              // Note: Better-auth stores OAuth data in the session during the flow
-              
               // Wait a moment for transaction to complete
               await new Promise(resolve => setTimeout(resolve, 100));
               
-              // Fetch the account with all its data
-              const accountData = await db.query.accounts.findFirst({
-                where: eq(schema.accounts.id, account.id),
+              // Fetch the user to check if this is account linking
+              const user = await db.query.users.findFirst({
+                where: eq(schema.users.id, account.userId),
               });
 
-              if (!accountData) {
-                console.error("MediaWiki account not found after creation");
+              if (!user) {
+                console.error("User not found for MediaWiki account");
                 return;
               }
 
-              // The username might be stored in different places depending on Better-Auth version
-              // Try to extract from context or account data
+              // CRITICAL: Check if this is account linking (user already has a real email)
+              // If so, we MUST preserve the original email and restore it immediately
+              const isAccountLinking = user.email && !user.email.includes('@temp.eventflow.local');
+              let originalEmail: string | null = null;
+              
+              if (isAccountLinking) {
+                // This is account linking - store the original email
+                originalEmail = user.email;
+                console.log("Account linking detected - original email to preserve:", originalEmail);
+              }
+              
+              // Extract username from placeholder email format: mediawiki-{username}@temp.eventflow.local
+              // This is how we encoded the username in getUserInfo
               let username: string | undefined;
               
-              // Option 1: Check if there's user data in context
-              if (ctx && typeof ctx === 'object' && 'user' in ctx) {
-                const userCtx = ctx as any;
-                username = userCtx.user?.raw?.username || userCtx.user?.name;
-              }
-
-              // Option 2: Query the user to see if name contains the username
-              if (!username) {
-                const user = await db.query.users.findFirst({
-                  where: eq(schema.users.id, account.userId),
-                });
-                
-                // If user was created via MediaWiki and has no email, the name is likely the username
-                if (user && !user.email && user.name) {
-                  username = user.name;
+              // Check if user email is a placeholder (contains the username)
+              if (user.email && user.email.includes('@temp.eventflow.local')) {
+                const match = user.email.match(/^mediawiki-(.+)@temp\.eventflow\.local$/);
+                if (match && match[1]) {
+                  username = match[1];
                 }
+              }
+              
+              // Fallback: Use name field (which Better-Auth sets from OAuth)
+              // For MediaWiki, name is typically the username if realname is not provided
+              if (!username && user.name) {
+                username = user.name;
               }
 
               if (username) {
                 console.log("Updating user with MediaWiki username:", username);
+                
+                // Prepare update data
+                const updateData: any = {
+                  mediawikiUsername: username,
+                  mediawikiUsernameVerifiedAt: new Date(),
+                };
+                
+                // CRITICAL: If this is account linking, ALWAYS restore the original email
+                // This ensures the existing Google email is preserved and no email mismatch occurs
+                if (isAccountLinking && originalEmail) {
+                  // Restore the original email immediately
+                  // Better-Auth might have temporarily set the placeholder email
+                  if (user.email?.includes('@temp.eventflow.local') || user.email !== originalEmail) {
+                    console.log("Restoring original email after MediaWiki account linking:", originalEmail);
+                    updateData.email = originalEmail;
+                    // Preserve email verification status
+                    updateData.emailVerified = user.emailVerified || true;
+                  }
+                }
+                
                 await db.update(schema.users)
-                  .set({
-                    mediawikiUsername: username,
-                    mediawikiUsernameVerifiedAt: new Date(),
-                  })
+                  .set(updateData)
                   .where(eq(schema.users.id, account.userId));
+                  
+                console.log("MediaWiki account linking complete - username stored, email preserved");
               } else {
-                console.warn("MediaWiki username not found in account creation context");
+                console.warn("MediaWiki username not found - user.name:", user.name, "user.email:", user.email);
               }
             }
           } catch (error) {

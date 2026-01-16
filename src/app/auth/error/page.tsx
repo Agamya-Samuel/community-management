@@ -28,7 +28,7 @@ export default function AuthErrorPage() {
   // Special handling for email_is_missing error (show brief message before redirect)
   if (error === "email_is_missing") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md">
           <Card className="shadow-lg border-0">
             <CardHeader className="text-center space-y-4">
@@ -46,24 +46,24 @@ export default function AuthErrorPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-              <AlertCircle className="w-8 h-8 text-red-600" />
+            <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-            <CardTitle className="text-2xl font-semibold text-red-900">Authentication Error</CardTitle>
+            <CardTitle className="text-2xl font-semibold text-foreground">Authentication Error</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-md">
               {error ? (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-red-800">Error: {error}</p>
-                  {errorDescription && <p className="text-sm text-red-700">{errorDescription}</p>}
+                  <p className="text-sm font-medium text-destructive-foreground">Error: {error}</p>
+                  {errorDescription && <p className="text-sm text-destructive-foreground">{errorDescription}</p>}
                 </div>
               ) : (
-                <p className="text-sm text-red-800">
+                <p className="text-sm text-destructive-foreground">
                   An unexpected error occurred during authentication. Please try again.
                 </p>
               )}

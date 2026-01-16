@@ -5,12 +5,12 @@ import { CheckCircle } from "lucide-react"
 
 export default function SignUpSuccessPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
             <CardTitle className="text-2xl font-semibold">Check your email</CardTitle>
             <CardDescription className="text-base">
@@ -18,11 +18,11 @@ export default function SignUpSuccessPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800">
+            <div className="p-4 bg-secondary/10 border border-secondary/20 rounded-md">
+              <p className="text-sm text-foreground">
                 <strong>Next steps:</strong>
               </p>
-              <ol className="text-sm text-blue-700 mt-2 space-y-1 list-decimal list-inside">
+              <ol className="text-sm text-muted-foreground mt-2 space-y-1 list-decimal list-inside">
                 <li>Check your email inbox</li>
                 <li>Click the confirmation link</li>
                 <li>Return here to sign in</li>
@@ -30,7 +30,7 @@ export default function SignUpSuccessPage() {
             </div>
 
             <div className="text-center space-y-3">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-muted-foreground">
                 Didn't receive the email? Check your spam folder or try signing up again.
               </p>
 
