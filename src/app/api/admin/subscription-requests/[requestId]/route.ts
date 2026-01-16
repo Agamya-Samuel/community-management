@@ -107,7 +107,7 @@ export async function POST(
       const subscriptionId = randomUUID();
       const now = new Date();
       const oneYearLater = new Date(now);
-      oneYearLater.setFullYear(oneYearLater.getFullYear() + 100);
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
 
       // Create subscription
       await db.insert(subscriptions).values({

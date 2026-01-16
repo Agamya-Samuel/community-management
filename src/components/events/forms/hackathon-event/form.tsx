@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { MultiPageForm } from "@/components/events/multi-page-form";
-import { BasicDetailsForm } from "./basic-details";
-import { DateTimeForm } from "./date-time";
-import { PlatformAccessForm } from "./platform-access";
-import { MediaForm } from "./media";
-import { ReviewForm } from "./review";
+import { BasicDetailsForm } from "../online-event/basic-details";
+import { DateTimeForm } from "../online-event/date-time";
+import { HackathonDetailsForm } from "./hackathon-details";
+import { MediaForm } from "../online-event/media";
+import { ReviewForm } from "../online-event/review";
 
 /**
- * Online Event Creation Form
+ * Hackathon Event Creation Form
  * 
- * Multi-page form for creating online events
- * Based on PRD: Online Event Creation - 7 pages total
+ * Multi-page form for creating hackathon events
+ * Includes hackathon-specific fields like prizes, teams, judging criteria
  */
-interface OnlineEventFormProps {
+interface HackathonEventFormProps {
   userId: string;
   communityId?: number; // Optional - if provided, event will be associated with this community
 }
 
 /**
- * Combined form data structure
+ * Combined form data structure for hackathon events
  * Stores all data from all pages
  */
-interface OnlineEventFormData {
+interface HackathonEventFormData {
   // Page 1: Basic Details
   title: string;
   shortDescription: string;
@@ -42,16 +42,50 @@ interface OnlineEventFormData {
   registrationDeadline: string;
   isRecurring: boolean;
 
-  // Page 3: Platform & Access
+  // Page 3: Hackathon Details
+  hackathonFormat: "online" | "onsite" | "hybrid";
+  // Online fields (if online or hybrid)
   platformType: string;
   meetingLink: string;
   meetingId: string;
   passcode: string;
-  accessControl: string;
-  waitingRoom: boolean;
-  maxParticipants: number;
-  recordingEnabled: boolean;
-  recordingAccess: string;
+  // Onsite fields (if onsite or hybrid)
+  venueName: string;
+  venueType: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  roomName: string;
+  googleMapsLink: string;
+  parkingAvailable: boolean;
+  parkingInstructions: string;
+  publicTransport: string;
+  // Hackathon-specific
+  maxTeamSize: number;
+  minTeamSize: number;
+  allowSolo: boolean;
+  prizes: Array<{
+    rank: string;
+    title: string;
+    description: string;
+    value: string;
+  }>;
+  judgingCriteria: Array<{
+    criterion: string;
+    weight: number;
+    description: string;
+  }>;
+  submissionRequirements: string;
+  technologyStack: string[];
+  mentorsAvailable: boolean;
+  judges: Array<{
+    name: string;
+    title: string;
+    bio: string;
+  }>;
 
   // Page 4: Media
   bannerUrl: string;
@@ -62,18 +96,14 @@ interface OnlineEventFormData {
   brandColor: string;
 }
 
-export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
+export function HackathonEventForm({ userId, communityId }: HackathonEventFormProps) {
   // Store all form data
-  const [formData, setFormData] = useState<Partial<OnlineEventFormData>>({});
-  
-  // Store navigation function from MultiPageForm
-  // This allows ReviewForm to navigate to specific pages
-  const [navigateToPage, setNavigateToPage] = useState<((pageIndex: number) => void) | null>(null);
+  const [formData, setFormData] = useState<Partial<HackathonEventFormData>>({});
 
   /**
    * Update form data for a specific page
    */
-  const updatePageData = (pageData: Partial<OnlineEventFormData>) => {
+  const updatePageData = (pageData: Partial<HackathonEventFormData>) => {
     setFormData((prev) => ({ ...prev, ...pageData }));
   };
 
@@ -89,7 +119,7 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
         },
         body: JSON.stringify({
           userId,
-          eventType: "online",
+          eventType: "hackathon",
           data: {
             ...formData,
             communityId: communityId, // Include communityId if provided
@@ -102,7 +132,6 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
         throw new Error("Failed to save draft");
       }
 
-      // Show success message (you can use toast here)
       console.log("Draft saved successfully");
     } catch (error) {
       console.error("Error saving draft:", error);
@@ -122,7 +151,7 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
         },
         body: JSON.stringify({
           userId,
-          eventType: "online",
+          eventType: "hackathon",
           data: {
             ...formData,
             communityId: communityId, // Include communityId if provided
@@ -149,17 +178,7 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
     }
   };
 
-  /**
-   * Handle navigation function from MultiPageForm
-   * This allows ReviewForm to navigate to specific pages
-   * Memoized with useCallback to prevent infinite re-renders
-   */
-  const handleNavigateReady = useCallback((navFn: (pageIndex: number) => void) => {
-    setNavigateToPage(() => navFn);
-  }, []);
-
   // Define all form pages
-  // Recreate pages array when navigateToPage is available so ReviewForm gets the navigation function
   const pages = [
     {
       title: "Basic Details",
@@ -180,9 +199,9 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
       ),
     },
     {
-      title: "Platform & Access",
+      title: "Hackathon Details",
       component: (
-        <PlatformAccessForm
+        <HackathonDetailsForm
           data={formData}
           onChange={(data) => updatePageData(data)}
         />
@@ -203,7 +222,6 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
         <ReviewForm
           data={formData}
           onPublish={handlePublish}
-          onNavigateToPage={navigateToPage || undefined}
         />
       ),
     },
@@ -215,7 +233,6 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
       onSaveDraft={handleSaveDraft}
       onPublish={handlePublish}
       showPublishOnLastPage={true}
-      onNavigateReady={handleNavigateReady}
     />
   );
 }

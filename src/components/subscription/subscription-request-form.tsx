@@ -29,11 +29,29 @@ import { toast } from "sonner";
 
 /**
  * Form schema for subscription request
+ * Required fields: wikimediaUsername, contributionType, purposeStatement
+ * All other fields are optional
+ * Note: Number fields are stored as strings in the form and converted in onSubmit
  */
 const requestSchema = z.object({
   wikimediaUsername: z.string().min(1, "Wikimedia username is required"),
-  wikimediaProfileUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
-  yearsActive: z.coerce.number().int().positive().optional().or(z.literal("")),
+  wikimediaProfileUrl: z
+    .string()
+    .refine((val) => val === "" || z.string().url().safeParse(val).success, {
+      message: "Invalid URL",
+    })
+    .optional(),
+  yearsActive: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || val === "") return true;
+        const num = Number(val);
+        return !isNaN(num) && num > 0 && Number.isInteger(num);
+      },
+      { message: "Must be a positive integer" }
+    ),
   contributionType: z.enum([
     "editor",
     "administrator",
@@ -46,11 +64,18 @@ const requestSchema = z.object({
     .string()
     .min(10, "Purpose statement must be at least 10 characters")
     .max(500, "Purpose statement must be less than 500 characters"),
-  editCount: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
-  contributionsUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
-  notableProjects: z.string().max(300).optional().or(z.literal("")),
-  alternativeEmail: z.string().email("Invalid email").optional().or(z.literal("")),
-  phoneNumber: z.string().optional(),
+  editCount: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || val === "") return true;
+        const num = Number(val);
+        return !isNaN(num) && num >= 0 && Number.isInteger(num);
+      },
+      { message: "Must be a non-negative integer" }
+    ),
+  notableProjects: z.string().max(300).optional(),
 });
 
 type RequestFormData = z.infer<typeof requestSchema>;
@@ -74,14 +99,11 @@ export function SubscriptionRequestForm({
     defaultValues: {
       wikimediaUsername: defaultWikimediaUsername || "",
       wikimediaProfileUrl: "",
-      yearsActive: undefined,
+      yearsActive: "",
       contributionType: "editor",
       purposeStatement: "",
-      editCount: undefined,
-      contributionsUrl: "",
+      editCount: "",
       notableProjects: "",
-      alternativeEmail: "",
-      phoneNumber: "",
     },
   });
 
@@ -109,12 +131,13 @@ export function SubscriptionRequestForm({
       const payload = {
         ...data,
         wikimediaProfileUrl: data.wikimediaProfileUrl || undefined,
-        yearsActive: data.yearsActive ? Number(data.yearsActive) : undefined,
-        editCount: data.editCount ? Number(data.editCount) : undefined,
-        contributionsUrl: data.contributionsUrl || undefined,
+        yearsActive:
+          data.yearsActive && data.yearsActive !== ""
+            ? Number(data.yearsActive)
+            : undefined,
+        editCount:
+          data.editCount && data.editCount !== "" ? Number(data.editCount) : undefined,
         notableProjects: data.notableProjects || undefined,
-        alternativeEmail: data.alternativeEmail || undefined,
-        phoneNumber: data.phoneNumber || undefined,
       };
 
       const response = await fetch("/api/subscriptions/request", {
@@ -282,45 +305,26 @@ export function SubscriptionRequestForm({
           )}
         />
 
-        {/* Edit Count and Contributions URL */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="editCount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Number of Edits</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="number"
-                    placeholder="e.g., 1000"
-                    value={field.value || ""}
-                  />
-                </FormControl>
-                <FormDescription>Approximate edit count (optional)</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="contributionsUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contributions URL</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="https://meta.wikimedia.org/wiki/Special:Contributions/YourUsername"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        {/* Edit Count */}
+        <FormField
+          control={form.control}
+          name="editCount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Number of Edits</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="number"
+                  placeholder="e.g., 1000"
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormDescription>Approximate edit count (optional)</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Notable Projects */}
         <FormField
@@ -344,46 +348,6 @@ export function SubscriptionRequestForm({
             </FormItem>
           )}
         />
-
-        {/* Contact Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="alternativeEmail"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Alternative Email</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    placeholder="alternative@example.com"
-                  />
-                </FormControl>
-                <FormDescription>Optional alternative contact email</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="tel"
-                    placeholder="+1 234 567 8900"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         {/* Submit Button */}
         <Button type="submit" disabled={loading} className="w-full" size="lg">

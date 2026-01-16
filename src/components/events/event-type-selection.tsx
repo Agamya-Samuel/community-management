@@ -6,19 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { 
   Globe, 
   MapPin, 
   Users, 
-  Code, 
-  Edit, 
-  GraduationCap, 
-  Network,
+  Code,
   ArrowRight 
 } from "lucide-react";
 
 /**
- * Event type options based on PRD documents
+ * Event type options - only 4 types supported
  * Each type has an icon, name, and description
  */
 const EVENT_TYPES = [
@@ -46,24 +44,6 @@ const EVENT_TYPES = [
     description: "Competitive coding events",
     icon: Code,
   },
-  {
-    value: "editathon",
-    label: "Edit-a-thon",
-    description: "Collaborative editing sessions",
-    icon: Edit,
-  },
-  {
-    value: "workshop",
-    label: "Workshop",
-    description: "Training sessions",
-    icon: GraduationCap,
-  },
-  {
-    value: "networking",
-    label: "Networking",
-    description: "Social meetups",
-    icon: Network,
-  },
 ] as const;
 
 export type EventType = typeof EVENT_TYPES[number]["value"];
@@ -74,14 +54,22 @@ export type EventType = typeof EVENT_TYPES[number]["value"];
  * First step in event creation flow
  * User selects the type of event they want to create
  * Based on PRD: All event types start with this selection screen
+ * 
+ * If communityId is provided, events are created within that community
+ * URL structure: /community/[id]/event/create/[type]
  */
-export function EventTypeSelection() {
+interface EventTypeSelectionProps {
+  communityId?: number;
+}
+
+export function EventTypeSelection({ communityId }: EventTypeSelectionProps) {
   const [selectedType, setSelectedType] = useState<EventType | "">("");
   const router = useRouter();
 
   /**
    * Handle continue button click
    * Navigate to the appropriate form based on selected event type
+   * Uses community-scoped URL if communityId is provided
    */
   const handleContinue = () => {
     if (!selectedType) {
@@ -89,7 +77,13 @@ export function EventTypeSelection() {
     }
 
     // Navigate to the form page with the selected event type
-    router.push(`/events/create/${selectedType}`);
+    // If communityId is provided, use community-scoped URL
+    if (communityId) {
+      router.push(`/community/${communityId}/event/create/${selectedType}`);
+    } else {
+      // Fallback to old URL structure (for backward compatibility)
+      router.push(`/events/create/${selectedType}`);
+    }
   };
 
   return (
@@ -120,8 +114,17 @@ export function EventTypeSelection() {
             >
               {EVENT_TYPES.map((type) => {
                 const Icon = type.icon;
+                const isSelected = selectedType === type.value;
                 return (
-                  <div key={type.value} className="flex items-start space-x-3">
+                  <div
+                    key={type.value}
+                    className={cn(
+                      "flex items-start space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer",
+                      "hover:bg-accent hover:border-primary",
+                      isSelected && "border-primary bg-accent"
+                    )}
+                    onClick={() => setSelectedType(type.value as EventType)}
+                  >
                     <RadioGroupItem
                       value={type.value}
                       id={type.value}

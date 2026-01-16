@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 /**
  * Date & Time Form for Online Events
@@ -60,6 +61,44 @@ export function DateTimeForm({ data, onChange }: DateTimeFormProps) {
   };
 
   /**
+   * Convert separate date and time to datetime-local format
+   * datetime-local format: YYYY-MM-DDTHH:mm
+   */
+  const combineDateTime = (date: string, time: string): string => {
+    if (!date || !time) return "";
+    return `${date}T${time}`;
+  };
+
+  /**
+   * Split datetime-local value into date and time parts
+   * datetime-local format: YYYY-MM-DDTHH:mm
+   */
+  const splitDateTime = (datetime: string): { date: string; time: string } => {
+    if (!datetime) return { date: "", time: "" };
+    const [date, time] = datetime.split("T");
+    return { date: date || "", time: time || "" };
+  };
+
+  /**
+   * Handle datetime change - split into date and time parts
+   * Updates both date and time fields together to avoid race conditions
+   */
+  const handleDateTimeChange = (field: "start" | "end", datetime: string) => {
+    const { date, time } = splitDateTime(datetime);
+    // Update both date and time fields together in a single update
+    // This prevents race conditions where one update might overwrite the other
+    if (field === "start") {
+      const updated = { ...formData, startDate: date, startTime: time };
+      setFormData(updated);
+      onChange(updated);
+    } else {
+      const updated = { ...formData, endDate: date, endTime: time };
+      setFormData(updated);
+      onChange(updated);
+    }
+  };
+
+  /**
    * Calculate duration
    */
   const calculateDuration = () => {
@@ -82,64 +121,52 @@ export function DateTimeForm({ data, onChange }: DateTimeFormProps) {
     }
   };
 
+  // Calculate minimum datetime (2 hours from now) for start datetime
+  const minStartDateTime = new Date(Date.now() + 2 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+
+  // Calculate minimum datetime for end datetime (start datetime if available)
+  const minEndDateTime = formData.startDate && formData.startTime
+    ? combineDateTime(formData.startDate, formData.startTime)
+    : undefined;
+
   return (
     <div className="space-y-6">
-      {/* Start Date & Time */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="startDate">
-            Start Date <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="startDate"
-            type="date"
-            value={formData.startDate}
-            onChange={(e) => updateField("startDate", e.target.value)}
-            min={new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().split("T")[0]}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="startTime">
-            Start Time <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="startTime"
-            type="time"
-            value={formData.startTime}
-            onChange={(e) => updateField("startTime", e.target.value)}
-            required
-          />
-        </div>
+      {/* Start Date & Time - Combined into single datetime picker */}
+      <div className="space-y-2">
+        <Label htmlFor="startDateTime">
+          Start Date & Time <span className="text-destructive">*</span>
+        </Label>
+        <DateTimePicker
+          id="startDateTime"
+          value={combineDateTime(formData.startDate, formData.startTime)}
+          onChange={(value) => handleDateTimeChange("start", value)}
+          min={minStartDateTime}
+          required
+          placeholder="dd-mm-yyyy --:--"
+        />
+        <p className="text-xs text-muted-foreground">
+          Select both date and time in one picker
+        </p>
       </div>
 
-      {/* End Date & Time */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="endDate">
-            End Date <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="endDate"
-            type="date"
-            value={formData.endDate}
-            onChange={(e) => updateField("endDate", e.target.value)}
-            min={formData.startDate || undefined}
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="endTime">
-            End Time <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="endTime"
-            type="time"
-            value={formData.endTime}
-            onChange={(e) => updateField("endTime", e.target.value)}
-            required
-          />
-        </div>
+      {/* End Date & Time - Combined into single datetime picker */}
+      <div className="space-y-2">
+        <Label htmlFor="endDateTime">
+          End Date & Time <span className="text-destructive">*</span>
+        </Label>
+        <DateTimePicker
+          id="endDateTime"
+          value={combineDateTime(formData.endDate, formData.endTime)}
+          onChange={(value) => handleDateTimeChange("end", value)}
+          min={minEndDateTime}
+          required
+          placeholder="dd-mm-yyyy --:--"
+        />
+        <p className="text-xs text-muted-foreground">
+          Must be after start date & time
+        </p>
       </div>
 
       {/* Duration Display */}
@@ -196,11 +223,11 @@ export function DateTimeForm({ data, onChange }: DateTimeFormProps) {
       {/* Registration Deadline */}
       <div className="space-y-2">
         <Label htmlFor="registrationDeadline">Registration Deadline (Optional)</Label>
-        <Input
+        <DateTimePicker
           id="registrationDeadline"
-          type="datetime-local"
           value={formData.registrationDeadline}
-          onChange={(e) => updateField("registrationDeadline", e.target.value)}
+          onChange={(value) => updateField("registrationDeadline", value)}
+          placeholder="dd-mm-yyyy --:--"
         />
         <p className="text-xs text-muted-foreground">
           Registration will close at this time. Leave empty to allow registration until event starts.
