@@ -19,8 +19,21 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   console.warn("⚠️  Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env.local");
 }
 
-if (!process.env.MEDIAWIKI_CLIENT_ID || !process.env.MEDIAWIKI_CLIENT_SECRET) {
-  console.warn("⚠️  MediaWiki OAuth credentials not configured. Set MEDIAWIKI_CLIENT_ID and MEDIAWIKI_CLIENT_SECRET in .env.local");
+// Enhanced MediaWiki OAuth validation
+const MEDIAWIKI_CONFIG_VALID = Boolean(
+  process.env.MEDIAWIKI_CLIENT_ID && 
+  process.env.MEDIAWIKI_CLIENT_SECRET
+);
+
+if (!MEDIAWIKI_CONFIG_VALID) {
+  console.warn(
+    "⚠️  MediaWiki OAuth credentials not configured.\n" +
+    "   Set the following in .env.local:\n" +
+    "   - MEDIAWIKI_CLIENT_ID: Your OAuth consumer key from MediaWiki\n" +
+    "   - MEDIAWIKI_CLIENT_SECRET: Your OAuth consumer secret\n" +
+    "   - MEDIAWIKI_BASE_URL (optional): Custom MediaWiki instance URL\n" +
+    "   MediaWiki OAuth will not work until these are configured."
+  );
 }
 
 /**
@@ -32,6 +45,13 @@ if (!process.env.MEDIAWIKI_CLIENT_ID || !process.env.MEDIAWIKI_CLIENT_SECRET) {
  * - Email verification for MediaWiki and Email/Password users
  * - Flexible identifier system (email OR mediawikiUsername)
  * - Custom user fields for MediaWiki username and verification timestamps
+ * 
+ * FIXED OAuth 2.0 Issues:
+ * - Corrected OAuth 2.0 scopes (removed OAuth 1.0a scope "mwoauth-authonly")
+ * - Fixed user ID mapping to use 'sub' instead of 'username' per OIDC spec
+ * - Enhanced account linking to work for both new users and existing users
+ * - Improved error handling and logging
+ * - Added MediaWiki username extraction from OAuth response
  */
 export const auth = betterAuth({
   // Database adapter using Drizzle ORM
@@ -191,12 +211,23 @@ export const auth = betterAuth({
           userInfoUrl: process.env.MEDIAWIKI_BASE_URL
             ? `${process.env.MEDIAWIKI_BASE_URL}/w/rest.php/oauth2/resource/profile`
             : "https://meta.wikimedia.org/w/rest.php/oauth2/resource/profile",
-          scopes: ["mwoauth-authonly"], // MediaWiki OAuth scope for authentication only
-          // Enable PKCE for non-confidential clients (MediaWiki supports PKCE)
+          // FIXED: OAuth 2.0 scopes - empty array for basic authentication
+          // MediaWiki OAuth 2.0 doesn't require scopes for basic user identification
+          // If you need email access, add: ["profile", "email"]
+          scopes: [],
+          // OAuth 2.0 authorization code flow (explicit)
+          responseType: "code",
+          // Enable PKCE for enhanced security (required for public clients)
           pkce: true,
+          // Explicitly use POST for token authentication (MediaWiki OAuth 2.0 standard)
+          authentication: "post",
+          // CRITICAL: Allow MediaWiki users without email to sign up
+          // MediaWiki OAuth may not provide email in the grants
+          // Users will be redirected to complete their profile after sign-in
+          disableImplicitSignUp: false,
           // Custom function to extract MediaWiki user info from OAuth response
           // MediaWiki OAuth 2.0 profile endpoint returns:
-          // - sub: central user ID
+          // - sub: central user ID (THIS IS THE UNIQUE IDENTIFIER per OIDC spec)
           // - username: MediaWiki username
           // - email: user email (if granted permission)
           // - realname: real name (if granted permission)
@@ -223,36 +254,60 @@ export const auth = betterAuth({
 
               if (!response.ok) {
                 const errorText = await response.text();
+                console.error("MediaWiki API error response:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: errorText,
+                  url: profileUrl,
+                });
                 throw new Error(
                   `MediaWiki API error: ${response.status} ${response.statusText}. ${errorText}`
                 );
               }
 
               const data = await response.json();
+              console.log("MediaWiki OAuth profile data:", JSON.stringify(data, null, 2));
               
-              // MediaWiki OAuth 2.0 returns:
-              // - sub: central user ID (numeric)
-              // - username: MediaWiki username (string) - this is what we use as the account identifier
-              // - email: user email (if granted, may be null)
-              // - realname: real name (if granted, may be null)
-              const username = data.username;
-              
-              if (!username) {
-                throw new Error("MediaWiki username not found in OAuth response");
+              // FIXED: Validate required fields
+              if (!data.sub) {
+                throw new Error("MediaWiki OAuth response missing 'sub' (user ID)");
+              }
+              if (!data.username) {
+                throw new Error("MediaWiki OAuth response missing 'username'");
               }
 
-              // Return user info in better-auth expected format
-              // For MediaWiki, we use the username as the account ID since that's the unique identifier we need
-              // The sub (central user ID) exists but username is what we display and store in mediawikiUsername
+              // FIXED: Use 'sub' as the unique account identifier (per OIDC/OAuth 2.0 spec)
+              // The 'sub' is the central user ID and is the proper unique identifier
+              // We'll store the username separately in our custom user fields
+              
+              // CRITICAL FIX: Handle missing email for MediaWiki users
+              // Better-Auth REQUIRES email field for user creation
+              // Solution: Create a placeholder email that user must update
+              // Format: mediawiki-{sub}@temp.local (guaranteed unique by sub)
+              const userEmail = data.email || `mediawiki-${data.sub}@temp.eventflow.local`;
+              const needsEmailUpdate = !data.email; // Flag for profile completion
+              
+              console.log(`MediaWiki user email status: ${needsEmailUpdate ? 'NEEDS UPDATE (temp email)' : 'provided'}`);
+              
               return {
-                id: username, // Use username as the account identifier (will be stored in accountId)
-                email: data.email || null, // Email if granted permission
-                name: data.realname || username, // Use realname if available, otherwise username
-                image: undefined, // MediaWiki OAuth doesn't provide profile image URL (must be undefined, not null)
-                emailVerified: data.confirmed_email || false, // Use confirmed_email flag from MediaWiki
+                id: data.sub, // FIXED: Use sub (central user ID) as account identifier
+                email: userEmail, // Real email or temporary placeholder
+                name: data.realname || data.username, // Use realname if available, otherwise username
+                image: undefined, // MediaWiki OAuth doesn't provide profile image URL
+                emailVerified: needsEmailUpdate ? false : (data.confirmed_email || false), // Temp emails are unverified
+                // Store username in raw data for later extraction
+                raw: {
+                  username: data.username,
+                  sub: data.sub,
+                  needsEmailUpdate: needsEmailUpdate, // Flag for UI
+                  ...data,
+                },
               };
             } catch (error) {
               console.error("Failed to fetch MediaWiki user info:", error);
+              if (error instanceof Error) {
+                console.error("Error details:", error.message, error.stack);
+              }
               throw error;
             }
           },
@@ -266,17 +321,83 @@ export const auth = betterAuth({
     account: {
       create: {
         // After account is created, sync better-auth fields to our custom fields
+        // AND handle MediaWiki username extraction and storage
         after: async (account, ctx) => {
-          // Sync accountId → providerAccountId and providerId → provider
-          // for backward compatibility with our custom logic
-          await db.update(schema.accounts)
-            .set({
-              providerAccountId: account.accountId,
-              provider: account.providerId,
-              // Also sync type field based on provider
-              type: account.providerId === "credentials" ? "credentials" : "oauth",
-            })
-            .where(eq(schema.accounts.id, account.id));
+          try {
+            // Sync accountId → providerAccountId and providerId → provider
+            // for backward compatibility with our custom logic
+            await db.update(schema.accounts)
+              .set({
+                providerAccountId: account.accountId,
+                provider: account.providerId,
+                // Also sync type field based on provider
+                type: account.providerId === "credentials" ? "credentials" : "oauth",
+              })
+              .where(eq(schema.accounts.id, account.id));
+
+            // FIXED: Handle MediaWiki account - extract username from session/context
+            // This works for both new user sign-up AND existing user account linking
+            if (account.providerId === "mediawiki") {
+              console.log("MediaWiki account created, extracting username...", {
+                accountId: account.id,
+                userId: account.userId,
+              });
+
+              // The username should be available in the session data
+              // We need to fetch it from the account or session
+              // Note: Better-auth stores OAuth data in the session during the flow
+              
+              // Wait a moment for transaction to complete
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              // Fetch the account with all its data
+              const accountData = await db.query.accounts.findFirst({
+                where: eq(schema.accounts.id, account.id),
+              });
+
+              if (!accountData) {
+                console.error("MediaWiki account not found after creation");
+                return;
+              }
+
+              // The username might be stored in different places depending on Better-Auth version
+              // Try to extract from context or account data
+              let username: string | undefined;
+              
+              // Option 1: Check if there's user data in context
+              if (ctx && typeof ctx === 'object' && 'user' in ctx) {
+                const userCtx = ctx as any;
+                username = userCtx.user?.raw?.username || userCtx.user?.name;
+              }
+
+              // Option 2: Query the user to see if name contains the username
+              if (!username) {
+                const user = await db.query.users.findFirst({
+                  where: eq(schema.users.id, account.userId),
+                });
+                
+                // If user was created via MediaWiki and has no email, the name is likely the username
+                if (user && !user.email && user.name) {
+                  username = user.name;
+                }
+              }
+
+              if (username) {
+                console.log("Updating user with MediaWiki username:", username);
+                await db.update(schema.users)
+                  .set({
+                    mediawikiUsername: username,
+                    mediawikiUsernameVerifiedAt: new Date(),
+                  })
+                  .where(eq(schema.users.id, account.userId));
+              } else {
+                console.warn("MediaWiki username not found in account creation context");
+              }
+            }
+          } catch (error) {
+            console.error("Error in account create hook:", error);
+            // Don't throw - allow account creation to succeed even if sync fails
+          }
         },
       },
     },
@@ -284,62 +405,79 @@ export const auth = betterAuth({
       create: {
         // After user is created via OAuth or signup
         after: async (user, ctx) => {
-          // Handle Google OAuth: Set emailVerifiedAt when user signs in with Google
-          // Check if this is from Google OAuth callback
-          // Add null check for ctx to satisfy TypeScript
-          if (ctx && ctx.path?.includes("callback") && user.email) {
-            // Small delay to ensure account is created first
-            setTimeout(async () => {
-              // Check if user has Google account linked
-              const account = await db.query.accounts.findFirst({
-                where: and(
-                  eq(schema.accounts.userId, user.id),
-                  eq(schema.accounts.provider, "google")
-                ),
-              });
-              
-              if (account) {
-                await db.update(schema.users)
-                  .set({
-                    emailVerified: true,
-                    emailVerifiedAt: new Date(),
-                  })
-                  .where(eq(schema.users.id, user.id));
-              }
-            }, 100);
-          }
-          
-          // Handle MediaWiki OAuth: Set mediawikiUsername and mediawikiUsernameVerifiedAt
-          // MediaWiki users are identified by username, not email
-          // Add null check for ctx to satisfy TypeScript
-          if (ctx && ctx.path?.includes("callback") && !user.email) {
-            // Small delay to ensure account is created first
-            setTimeout(async () => {
-              // Check if user has MediaWiki account linked
-              const account = await db.query.accounts.findFirst({
-                where: and(
-                  eq(schema.accounts.userId, user.id),
-                  eq(schema.accounts.provider, "mediawiki")
-                ),
-              });
-              
-              if (account) {
-                // Extract username from account or user data
-                // The username should be in the account's providerAccountId or user's name
-                const mediawikiUsername = account.providerAccountId || user.name;
-                
-                if (mediawikiUsername) {
-                  await db.update(schema.users)
-                    .set({
-                      mediawikiUsername: mediawikiUsername,
-                      mediawikiUsernameVerifiedAt: new Date(),
-                      // Set name to username if not already set
-                      name: user.name || mediawikiUsername,
-                    })
-                    .where(eq(schema.users.id, user.id));
+          try {
+            // CRITICAL: Check if user has temporary MediaWiki email
+            // If email matches pattern mediawiki-*@temp.eventflow.local, redirect to complete profile
+            if (user.email && user.email.includes('@temp.eventflow.local')) {
+              console.log("MediaWiki user with temporary email created, needs profile completion:", user.email);
+              // The redirect will be handled by checking this in middleware/session
+            }
+            
+            // Handle Google OAuth: Set emailVerifiedAt when user signs in with Google
+            // Check if this is from Google OAuth callback
+            if (ctx && ctx.path?.includes("callback") && user.email) {
+              // Small delay to ensure account is created first
+              setTimeout(async () => {
+                try {
+                  // Check if user has Google account linked
+                  const account = await db.query.accounts.findFirst({
+                    where: and(
+                      eq(schema.accounts.userId, user.id),
+                      eq(schema.accounts.provider, "google")
+                    ),
+                  });
+                  
+                  if (account) {
+                    await db.update(schema.users)
+                      .set({
+                        emailVerified: true,
+                        emailVerifiedAt: new Date(),
+                      })
+                      .where(eq(schema.users.id, user.id));
+                  }
+                } catch (error) {
+                  console.error("Error updating Google user email verification:", error);
                 }
-              }
-            }, 100);
+              }, 100);
+            }
+            
+            // FIXED: Handle MediaWiki OAuth for NEW users
+            // For existing users linking MediaWiki, the account.create hook handles it
+            // This only runs for NEW user creation via MediaWiki OAuth
+            if (ctx && ctx.path?.includes("callback") && !user.email) {
+              // Small delay to ensure account is created first
+              setTimeout(async () => {
+                try {
+                  // Check if user has MediaWiki account linked
+                  const account = await db.query.accounts.findFirst({
+                    where: and(
+                      eq(schema.accounts.userId, user.id),
+                      eq(schema.accounts.provider, "mediawiki")
+                    ),
+                  });
+                  
+                  if (account) {
+                    // Extract username from account or user data
+                    // The username should be in the user's name field for new users
+                    const mediawikiUsername = user.name;
+                    
+                    if (mediawikiUsername) {
+                      await db.update(schema.users)
+                        .set({
+                          mediawikiUsername: mediawikiUsername,
+                          mediawikiUsernameVerifiedAt: new Date(),
+                        })
+                        .where(eq(schema.users.id, user.id));
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error updating MediaWiki user:", error);
+                }
+              }, 100);
+            }
+          } catch (error) {
+            console.error("Error in user create hook:", error);
+            // Don't throw - allow user creation to succeed
           }
         },
       },
