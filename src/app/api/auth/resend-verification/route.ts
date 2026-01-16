@@ -4,6 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { Resend } from "resend";
 
 /**
  * Resend verification email API route
@@ -60,23 +61,52 @@ export async function POST(request: NextRequest) {
       expiresAt: expiresAt, // Better-auth uses "expiresAt" instead of "expires"
     });
 
-    // Send verification email using better-auth's email verification function
+    // Send verification email using Resend directly
     const baseURL = process.env.BETTER_AUTH_URL || process.env.AUTH_URL || "http://localhost:3000";
     const verificationUrl = `${baseURL}/api/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
 
-    // Use better-auth's email verification function
-    await auth.emailVerification.sendVerificationEmail(
-      {
-        user: {
-          id: user.id,
-          email: user.email || "",
-          name: user.name || "",
-        },
-        url: verificationUrl,
-        token: token,
-      },
-      request
-    );
+    // Send email directly using Resend (the same way it's configured in auth config)
+    const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+    
+    if (!resend) {
+      console.error("Resend API key not configured. Cannot send verification email.");
+      return NextResponse.json(
+        { error: "Email service not configured" },
+        { status: 500 }
+      );
+    }
+
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || "noreply@example.com",
+        to: email,
+        subject: "Verify your email address",
+        html: `
+          <h1>Verify your email address</h1>
+          <p>Hello ${user.name || "there"},</p>
+          <p>Please verify your email address by clicking the link below:</p>
+          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you didn't request this verification, please ignore this email.</p>
+        `,
+        text: `
+          Hello ${user.name || "there"},
+          
+          Please verify your email address by clicking the link below:
+          ${verificationUrl}
+          
+          This link will expire in 24 hours.
+          
+          If you didn't request this verification, please ignore this email.
+        `,
+      });
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+      return NextResponse.json(
+        { error: "Failed to send verification email" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: "Verification email sent successfully",
