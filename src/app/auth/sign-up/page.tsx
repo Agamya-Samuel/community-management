@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Github } from "lucide-react"
+import { Globe } from "lucide-react"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -38,9 +38,20 @@ export default function SignUpPage() {
     }
 
     try {
-      // Authentication functionality removed - Supabase dependencies have been removed
-      // TODO: Implement authentication logic here
-      setError("Authentication is not currently implemented")
+      const { authClient } = await import("@/lib/auth/client")
+      const result = await authClient.signUp.email({
+        email,
+        password,
+        name: email.split("@")[0], // Use email prefix as default name
+        callbackURL: "/dashboard",
+      })
+
+      if (result.error) {
+        setError(result.error.message || "Failed to create account")
+      } else {
+        // Redirect to profile completion or dashboard
+        router.push("/auth/complete-profile")
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
@@ -48,15 +59,34 @@ export default function SignUpPage() {
     }
   }
 
-  const handleSocialSignUp = async (provider: "google" | "github") => {
+  const handleSocialSignUp = async (provider: "google" | "mediawiki") => {
     setSocialLoading(provider)
     setError(null)
 
     try {
-      // Social authentication functionality removed - Supabase dependencies have been removed
-      // TODO: Implement social authentication logic here
-      setError(`${provider} authentication is not currently implemented`)
-      setSocialLoading(null)
+      const { authClient } = await import("@/lib/auth/client")
+      
+      // Google uses signIn.social (built-in provider)
+      // MediaWiki uses signIn.oauth2 (generic OAuth provider)
+      const result = provider === "google"
+        ? await authClient.signIn.social({
+            provider,
+            callbackURL: "/dashboard",
+          })
+        : await authClient.signIn.oauth2({
+            providerId: provider,
+            callbackURL: "/dashboard",
+          })
+
+      // Both methods return { data, error }
+      // If there's an error, it will be in result.error
+      if (result.error) {
+        setError(result.error.message || `${provider} authentication failed`)
+        setSocialLoading(null)
+      } else if (result.data?.url) {
+        // Redirect to the OAuth provider
+        window.location.href = result.data.url
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
       setSocialLoading(null)
@@ -114,15 +144,15 @@ export default function SignUpPage() {
               <Button
                 variant="outline"
                 className="w-full h-11 bg-white hover:bg-gray-50"
-                onClick={() => handleSocialSignUp("github")}
-                disabled={socialLoading === "github" || isLoading}
+                onClick={() => handleSocialSignUp("mediawiki")}
+                disabled={socialLoading === "mediawiki" || isLoading}
               >
-                {socialLoading === "github" ? (
+                {socialLoading === "mediawiki" ? (
                   "Connecting..."
                 ) : (
                   <>
-                    <Github className="w-5 h-5 mr-2" />
-                    Continue with GitHub
+                    <Globe className="w-5 h-5 mr-2" />
+                    Continue with MediaWiki
                   </>
                 )}
               </Button>
