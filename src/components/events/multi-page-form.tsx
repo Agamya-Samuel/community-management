@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState, useEffect, useRef, useCallback, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 /**
  * Multi-Page Form Component
@@ -23,6 +24,8 @@ interface MultiPageFormProps {
   onSaveDraft?: () => Promise<void>;
   onPublish?: () => Promise<void>;
   showPublishOnLastPage?: boolean;
+  // Callback to provide navigation function to parent component
+  onNavigateReady?: (navigateToPage: (pageIndex: number) => void) => void;
 }
 
 export function MultiPageForm({
@@ -30,9 +33,37 @@ export function MultiPageForm({
   onSaveDraft,
   onPublish,
   showPublishOnLastPage = false,
+  onNavigateReady,
 }: MultiPageFormProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+
+  /**
+   * Navigate to a specific page by index
+   * Used by Edit buttons in ReviewForm to jump to specific pages
+   * Memoized to prevent unnecessary re-renders
+   */
+  const navigateToPage = useCallback((pageIndex: number) => {
+    if (pageIndex >= 0 && pageIndex < pages.length) {
+      setCurrentPage(pageIndex);
+    }
+  }, [pages.length]);
+
+  // Store the latest onNavigateReady callback in a ref
+  // This prevents the useEffect from re-running when the callback reference changes
+  const onNavigateReadyRef = useRef(onNavigateReady);
+  useEffect(() => {
+    onNavigateReadyRef.current = onNavigateReady;
+  }, [onNavigateReady]);
+
+  // Expose navigation function to parent component
+  // Only call when navigateToPage is ready, using the ref to avoid dependency issues
+  useEffect(() => {
+    if (onNavigateReadyRef.current) {
+      onNavigateReadyRef.current(navigateToPage);
+    }
+  }, [navigateToPage]);
 
   const totalPages = pages.length;
   const progress = ((currentPage + 1) / totalPages) * 100;
@@ -78,6 +109,7 @@ export function MultiPageForm({
   /**
    * Publish event
    * Calls the onPublish callback if provided
+   * Shows error message to user if publishing fails
    */
   const handlePublish = async () => {
     if (!onPublish) return;
@@ -87,6 +119,13 @@ export function MultiPageForm({
       await onPublish();
     } catch (error) {
       console.error("Failed to publish event:", error);
+      // Show error message to user
+      const errorMessage = error instanceof Error ? error.message : "Failed to publish event. Please try again.";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }

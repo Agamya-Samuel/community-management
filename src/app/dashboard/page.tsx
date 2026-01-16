@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
-  Calendar,
   Settings,
   Plus,
-  ExternalLink,
-  MapPin,
-  Clock
+  ExternalLink
 } from "lucide-react";
 import Link from "next/link";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
@@ -23,11 +20,11 @@ import { hasActiveSubscription } from "@/lib/subscription/utils";
 import { Crown } from "lucide-react";
 
 /**
- * Dashboard page showing user's community and event activity
+ * Dashboard page showing user's community activity
  * 
  * Displays:
  * - Community section with browse and create options
- * - Event section with browse and create options
+ * Note: Events are shown inside individual community pages, not on the dashboard
  */
 export default async function DashboardPage() {
   // Get session from better-auth
@@ -103,25 +100,6 @@ export default async function DashboardPage() {
     },
   }));
 
-  // Placeholder: Events where user has participated or created
-  // This will query EventMember and Event tables
-  const userEvents: any[] = [];
-  // Example query (commented out until tables exist):
-  // const participatedEvents = await db.query.eventMember.findMany({
-  //   where: eq(schema.eventMember.userId, user.id),
-  //   with: {
-  //     event: {
-  //       with: { community: true }
-  //     }
-  //   },
-  //   orderBy: desc(schema.eventMember.joinedAt)
-  // });
-  // const createdEvents = await db.query.event.findMany({
-  //   where: eq(schema.event.createdBy, user.id),
-  //   with: { community: true },
-  //   orderBy: desc(schema.event.createdAt)
-  // });
-  // const userEvents = [...participatedEvents, ...createdEvents];
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,89 +219,6 @@ export default async function DashboardPage() {
                               </Link>
                             </Button>
                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Event Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                Event
-              </CardTitle>
-              <CardDescription>
-                Browse existing events or create your own
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {userEvents.length === 0 ? (
-                <div className="text-center py-12">
-                  <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">You haven't joined any events yet</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Browse existing events or create your own to start connecting with people
-                  </p>
-                  <div className="flex items-center justify-center gap-3">
-                    <Button variant="outline" asChild>
-                      <Link href="/events">
-                        Browse Events
-                      </Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/events/create">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create My Event
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {userEvents.map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold text-foreground">
-                                {item.event?.name || "Event"}
-                              </h3>
-                              <Badge variant="outline">
-                                {item.event?.community?.name || "Community"}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                              {item.event?.description || "No description"}
-                            </p>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              {item.event?.startDate && (
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
-                                  <span>
-                                    {new Date(item.event.startDate).toLocaleDateString()}
-                                  </span>
-                                </div>
-                              )}
-                              {item.event?.location && (
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="w-4 h-4" />
-                                  <span>{item.event.location}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link href={`/events/${item.eventId}`}>
-                              View
-                              <ExternalLink className="w-3 h-3 ml-1" />
-                            </Link>
-                          </Button>
                         </div>
                       </CardContent>
                     </Card>

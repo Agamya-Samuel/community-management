@@ -1,35 +1,60 @@
 import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { hasActiveSubscription } from "@/lib/subscription/utils";
 import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { OnlineEventForm } from "@/components/events/forms/online-event/form";
+import { db } from "@/db";
+import { communities } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 /**
- * Dynamic route for event creation forms
+ * Dynamic route for event creation forms within a community
+ * 
+ * URL structure: /community/[id]/event/create/[type]
  * 
  * Handles different event types: online, onsite, hybrid, hackathon
  * Each event type has its own multi-page form with type-specific fields
  * 
- * Supports communityId query parameter to associate event with a community
+ * The community ID is extracted from the URL params and passed to the form
  */
 interface CreateEventTypePageProps {
-  params: Promise<{ type: string }>;
-  searchParams: Promise<{ communityId?: string }> | { communityId?: string };
+  params: Promise<{ id: string; type: string }> | { id: string; type: string };
 }
 
 export default async function CreateEventTypePage({
   params,
-  searchParams,
 }: CreateEventTypePageProps) {
   // Get session from better-auth
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
+  // Resolve params (Next.js 15+ compatibility)
+  const resolvedParams = await Promise.resolve(params);
+  const communityId = parseInt(resolvedParams.id, 10);
+  const { type } = resolvedParams;
+
+  // Validate community ID
+  if (isNaN(communityId)) {
+    notFound();
+  }
+
+  // Verify community exists
+  const communityResult = await db
+    .select()
+    .from(communities)
+    .where(eq(communities.id, communityId))
+    .limit(1);
+
+  if (communityResult.length === 0) {
+    notFound();
+  }
+
   // Redirect to login if not authenticated
+  // Include community ID and type in callback URL
   if (!session?.user) {
-    redirect("/auth/login?callbackUrl=/events/create");
+    redirect(`/auth/login?callbackUrl=/community/${communityId}/event/create/${type}`);
   }
 
   const user = session.user;
@@ -47,22 +72,6 @@ export default async function CreateEventTypePage({
     );
   }
 
-  // Get event type from params
-  const { type } = await params;
-
-  // Get communityId from search params if provided
-  // This allows events to be associated with a community when created from a community page
-  const resolvedSearchParams = await Promise.resolve(searchParams);
-  const communityId = resolvedSearchParams.communityId 
-    ? parseInt(resolvedSearchParams.communityId, 10) 
-    : undefined;
-
-  // Validate communityId if provided
-  if (communityId !== undefined && isNaN(communityId)) {
-    // Invalid communityId, ignore it
-    console.warn("Invalid communityId provided:", resolvedSearchParams.communityId);
-  }
-
   // Validate event type - only 4 types supported
   const validTypes = [
     "online",
@@ -72,30 +81,30 @@ export default async function CreateEventTypePage({
   ];
 
   if (!validTypes.includes(type)) {
-    redirect("/events/create");
+    redirect(`/community/${communityId}/event/create`);
   }
 
   // Render appropriate form based on event type
   // Pass communityId to forms so they can include it in the form data
   if (type === "online") {
-    return <OnlineEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <OnlineEventForm userId={user.id} communityId={communityId} />;
   }
 
   if (type === "onsite") {
     const { OnsiteEventForm } = await import("@/components/events/forms/onsite-event/form");
-    return <OnsiteEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <OnsiteEventForm userId={user.id} communityId={communityId} />;
   }
 
   if (type === "hybrid") {
     const { HybridEventForm } = await import("@/components/events/forms/hybrid-event/form");
-    return <HybridEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <HybridEventForm userId={user.id} communityId={communityId} />;
   }
 
   if (type === "hackathon") {
     const { HackathonEventForm } = await import("@/components/events/forms/hackathon-event/form");
-    return <HackathonEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <HackathonEventForm userId={user.id} communityId={communityId} />;
   }
 
   // Fallback - should not reach here
-  redirect("/events/create");
+  redirect(`/community/${communityId}/event/create`);
 }

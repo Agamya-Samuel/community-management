@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,9 @@ import {
   User,
   Shield,
   Building2,
-  ExternalLink
+  ExternalLink,
+  Video,
+  MapPin as MapPinIcon
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -132,6 +134,69 @@ export default async function CommunityDetailPage({
     return acc;
   }, {} as Record<string, typeof admins>);
 
+  // Fetch all events for this community
+  // Get published events, ordered by start date (upcoming first)
+  const communityEvents = await db
+    .select()
+    .from(schema.events)
+    .where(eq(schema.events.communityId, communityId))
+    .orderBy(desc(schema.events.startDatetime));
+
+  // Helper function to format date for display
+  const formatEventDate = (date: Date | null) => {
+    if (!date) return "Date TBD";
+    try {
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return "Invalid date";
+    }
+  };
+
+  // Helper function to format time for display
+  const formatEventTime = (date: Date | null) => {
+    if (!date) return "";
+    try {
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  // Helper function to get event type badge variant and icon
+  const getEventTypeDisplay = (eventType: string) => {
+    switch (eventType) {
+      case "online":
+        return { label: "Online", icon: Video, variant: "default" as const };
+      case "onsite":
+        return { label: "Onsite", icon: MapPinIcon, variant: "secondary" as const };
+      case "hybrid":
+        return { label: "Hybrid", icon: Globe, variant: "outline" as const };
+      default:
+        return { label: eventType, icon: Calendar, variant: "outline" as const };
+    }
+  };
+
+  // Helper function to get status badge variant
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "published":
+        return "default" as const;
+      case "draft":
+        return "secondary" as const;
+      case "cancelled":
+        return "destructive" as const;
+      default:
+        return "outline" as const;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -228,7 +293,7 @@ export default async function CommunityDetailPage({
                       </Button>
                     )}
                     <Button variant="outline" asChild>
-                      <Link href="/events/create">
+                      <Link href={`/community/${communityId}/event/create`}>
                         <Calendar className="w-4 h-4 mr-2" />
                         Create Event
                       </Link>
@@ -261,7 +326,7 @@ export default async function CommunityDetailPage({
               </CardContent>
             </Card>
 
-            {/* Events Section - Placeholder for now */}
+            {/* Events Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -269,14 +334,98 @@ export default async function CommunityDetailPage({
                   Events
                 </CardTitle>
                 <CardDescription>
-                  Community events will be displayed here
+                  {communityEvents.length === 0
+                    ? "Community events will be displayed here"
+                    : `${communityEvents.length} ${communityEvents.length === 1 ? "event" : "events"} in this community`}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No events yet. Check back soon!</p>
-                </div>
+                {communityEvents.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No events yet. Check back soon!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {communityEvents.map((event) => {
+                      const eventTypeDisplay = getEventTypeDisplay(event.eventType);
+                      const EventTypeIcon = eventTypeDisplay.icon;
+                      
+                      return (
+                        <Link
+                          key={event.eventId}
+                          href={`/events/${event.eventId}`}
+                          className="block"
+                        >
+                          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                            <CardContent className="p-4">
+                              <div className="flex gap-4">
+                                {/* Event Thumbnail */}
+                                {event.thumbnailUrl ? (
+                                  <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                                    <Image
+                                      src={event.thumbnailUrl}
+                                      alt={event.title}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="w-24 h-24 flex-shrink-0 rounded-lg bg-muted flex items-center justify-center">
+                                    <Calendar className="w-8 h-8 text-muted-foreground" />
+                                  </div>
+                                )}
+
+                                {/* Event Details */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2 mb-2">
+                                    <h3 className="font-semibold text-foreground line-clamp-2">
+                                      {event.title}
+                                    </h3>
+                                    <div className="flex gap-2 flex-shrink-0">
+                                      <Badge variant={eventTypeDisplay.variant} className="text-xs">
+                                        <EventTypeIcon className="w-3 h-3 mr-1" />
+                                        {eventTypeDisplay.label}
+                                      </Badge>
+                                      <Badge variant={getStatusVariant(event.status)} className="text-xs">
+                                        {event.status}
+                                      </Badge>
+                                    </div>
+                                  </div>
+
+                                  {event.shortDescription && (
+                                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                      {event.shortDescription}
+                                    </p>
+                                  )}
+
+                                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="w-4 h-4" />
+                                      <span>{formatEventDate(event.startDatetime)}</span>
+                                    </div>
+                                    {event.startDatetime && (
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="w-4 h-4" />
+                                        <span>{formatEventTime(event.startDatetime)}</span>
+                                      </div>
+                                    )}
+                                    {event.capacity && (
+                                      <div className="flex items-center gap-1">
+                                        <Users className="w-4 h-4" />
+                                        <span>Capacity: {event.capacity}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

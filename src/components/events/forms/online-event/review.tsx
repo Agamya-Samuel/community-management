@@ -13,9 +13,12 @@ import { CheckCircle2, Edit } from "lucide-react";
 interface ReviewFormProps {
   data?: any;
   onPublish: () => Promise<void>;
+  // Function to navigate to a specific page by index
+  // Page indices: 0=Basic Details, 1=Date & Time, 2=Platform & Access, 3=Media, 4=Review
+  onNavigateToPage?: (pageIndex: number) => void;
 }
 
-export function ReviewForm({ data, onPublish }: ReviewFormProps) {
+export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProps) {
   /**
    * Check if all required fields are filled
    */
@@ -29,7 +32,6 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
       { name: "Start date & time", valid: !!data?.startDate && !!data?.startTime },
       { name: "End date & time", valid: !!data?.endDate && !!data?.endTime },
       { name: "Platform link", valid: !!data?.meetingLink },
-      { name: "Contact email", valid: !!data?.contactEmail },
       { name: "Event banner", valid: !!data?.bannerUrl },
       { name: "Event thumbnail", valid: !!data?.thumbnailUrl },
     ];
@@ -47,7 +49,11 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Basic Details</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onNavigateToPage?.(0)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -63,7 +69,11 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Date & Time</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onNavigateToPage?.(1)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -80,7 +90,11 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Platform & Access</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onNavigateToPage?.(2)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -95,7 +109,11 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Registration</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onNavigateToPage?.(2)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -110,7 +128,11 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Team</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onNavigateToPage?.(0)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
@@ -125,7 +147,11 @@ export function ReviewForm({ data, onPublish }: ReviewFormProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Media</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => onNavigateToPage?.(3)}
+            >
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>

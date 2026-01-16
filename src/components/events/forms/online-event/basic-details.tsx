@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 
 /**
  * Basic Details Form for Online Events
@@ -20,7 +19,6 @@ interface BasicDetailsData {
   category: string;
   tags: string[];
   language: string;
-  accessibility: string[];
 }
 
 interface BasicDetailsProps {
@@ -49,13 +47,6 @@ const LANGUAGES = [
   { value: "ja", label: "Japanese" },
 ];
 
-const ACCESSIBILITY_OPTIONS = [
-  { value: "live_captions", label: "Live captions" },
-  { value: "sign_language", label: "Sign language interpretation" },
-  { value: "screen_reader", label: "Screen reader friendly" },
-  { value: "transcript", label: "Transcript available" },
-];
-
 export function BasicDetailsForm({ data, onChange }: BasicDetailsProps) {
   const [formData, setFormData] = useState<BasicDetailsData>({
     title: data?.title || "",
@@ -64,7 +55,6 @@ export function BasicDetailsForm({ data, onChange }: BasicDetailsProps) {
     category: data?.category || "",
     tags: data?.tags || [],
     language: data?.language || "en",
-    accessibility: data?.accessibility || [],
   });
 
   /**
@@ -96,16 +86,6 @@ export function BasicDetailsForm({ data, onChange }: BasicDetailsProps) {
    */
   const removeTag = (tagToRemove: string) => {
     updateField("tags", formData.tags.filter((tag) => tag !== tagToRemove));
-  };
-
-  /**
-   * Toggle accessibility option
-   */
-  const toggleAccessibility = (value: string) => {
-    const updated = formData.accessibility.includes(value)
-      ? formData.accessibility.filter((a) => a !== value)
-      : [...formData.accessibility, value];
-    updateField("accessibility", updated);
   };
 
   return (
@@ -243,28 +223,6 @@ export function BasicDetailsForm({ data, onChange }: BasicDetailsProps) {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      {/* Accessibility Features */}
-      <div className="space-y-2">
-        <Label>Accessibility Features (Optional)</Label>
-        <div className="space-y-3">
-          {ACCESSIBILITY_OPTIONS.map((option) => (
-            <div key={option.value} className="flex items-center space-x-2">
-              <Checkbox
-                id={option.value}
-                checked={formData.accessibility.includes(option.value)}
-                onCheckedChange={() => toggleAccessibility(option.value)}
-              />
-              <Label
-                htmlFor={option.value}
-                className="text-sm font-normal cursor-pointer"
-              >
-                {option.label}
-              </Label>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

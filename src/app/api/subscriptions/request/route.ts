@@ -8,6 +8,8 @@ import { z } from "zod";
 
 /**
  * Request schema for Wikimedia subscription request
+ * Required fields: wikimediaUsername, contributionType, purposeStatement
+ * All other fields are optional
  */
 const requestSchema = z.object({
   wikimediaUsername: z.string().min(1),
@@ -23,10 +25,7 @@ const requestSchema = z.object({
   ]),
   purposeStatement: z.string().min(10).max(500),
   editCount: z.number().int().nonnegative().optional(),
-  contributionsUrl: z.string().url().optional(),
   notableProjects: z.string().max(300).optional(),
-  alternativeEmail: z.string().email().optional(),
-  phoneNumber: z.string().optional(),
 });
 
 /**
@@ -92,6 +91,8 @@ export async function POST(request: NextRequest) {
     const validatedData = requestSchema.parse(body);
 
     // Create subscription request
+    // CRITICAL: Status must always be "pending" - approval only happens via admin action
+    // Never set status to "approved" here - admins must explicitly approve via admin panel
     const requestId = randomUUID();
     await db.insert(subscriptionRequests).values({
       requestId,
@@ -102,11 +103,11 @@ export async function POST(request: NextRequest) {
       contributionType: validatedData.contributionType,
       purposeStatement: validatedData.purposeStatement,
       editCount: validatedData.editCount || null,
-      contributionsUrl: validatedData.contributionsUrl || null,
+      contributionsUrl: null,
       notableProjects: validatedData.notableProjects || null,
-      alternativeEmail: validatedData.alternativeEmail || null,
-      phoneNumber: validatedData.phoneNumber || null,
-      status: "pending",
+      alternativeEmail: null,
+      phoneNumber: null,
+      status: "pending", // Always pending - requires admin approval
     });
 
     return NextResponse.json({
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Validation error", details: error.errors },
+        { error: "Validation error", details: error.issues },
         { status: 400 }
       );
     }
