@@ -4,6 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { Resend } from "resend";
 
 /**
  * Add email to MediaWiki user API route
@@ -45,8 +46,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already has an email
-    if (user.email) {
+    // Check if user already has a REAL email (not temporary)
+    if (user.email && !user.email.includes('@temp.eventflow.local')) {
       return NextResponse.json(
         { error: "User already has an email address" },
         { status: 400 }
@@ -99,18 +100,48 @@ export async function POST(request: NextRequest) {
     const baseURL = process.env.BETTER_AUTH_URL || process.env.AUTH_URL || "http://localhost:3000";
     const verificationUrl = `${baseURL}/api/auth/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
 
-    await auth.emailVerification.sendVerificationEmail(
-      {
-        user: {
-          id: user.id,
-          email: email,
-          name: user.name || "",
-        },
-        url: verificationUrl,
-        token: token,
-      },
-      request
-    );
+    // Send email directly using Resend (the same way it's configured in auth config)
+    const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+    
+    if (!resend) {
+      console.error("Resend API key not configured. Cannot send verification email.");
+      return NextResponse.json(
+        { error: "Email service not configured" },
+        { status: 500 }
+      );
+    }
+
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || "noreply@example.com",
+        to: email,
+        subject: "Verify your email address",
+        html: `
+          <h1>Verify your email address</h1>
+          <p>Hello ${user.name || "there"},</p>
+          <p>Please verify your email address by clicking the link below:</p>
+          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you didn't request this verification, please ignore this email.</p>
+        `,
+        text: `
+          Hello ${user.name || "there"},
+          
+          Please verify your email address by clicking the link below:
+          ${verificationUrl}
+          
+          This link will expire in 24 hours.
+          
+          If you didn't request this verification, please ignore this email.
+        `,
+      });
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+      return NextResponse.json(
+        { error: "Failed to send verification email" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: "Email added successfully. Please check your email for verification link.",
