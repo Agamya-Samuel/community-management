@@ -31,7 +31,12 @@ export async function POST(request: NextRequest) {
       headers: request.headers,
     });
 
-    // Convert the plain object response to a proper NextResponse
+    // If it's already a Response, return it directly
+    if (response instanceof Response) {
+      return response;
+    }
+
+    // Otherwise, handle as plain object response
     if (response.url) {
       if (response.redirect) {
         return NextResponse.redirect(new URL(response.url));
