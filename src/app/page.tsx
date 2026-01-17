@@ -449,6 +449,8 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          <p className="text-muted-foreground text-sm text-center mt-4">Developed by Agamya, Aditya, Jaish</p>
         </div>
       </footer>
     </div>
