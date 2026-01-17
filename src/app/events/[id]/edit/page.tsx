@@ -170,7 +170,7 @@ export default async function EditEventPage({
           platformType: onlineMetadata?.platformType || "",
           accessControl: onlineMetadata?.accessControl || "",
           waitingRoom: onlineMetadata?.waitingRoomEnabled || false,
-          maxParticipants: onlineMetadata?.maxParticipants || null,
+          maxParticipants: onlineMetadata?.maxParticipants || undefined,
           recordingEnabled: onlineMetadata?.recordingEnabled || false,
           recordingAccess: onlineMetadata?.recordingAvailability || "",
         }
