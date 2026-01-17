@@ -8,7 +8,8 @@ import {
   Users, 
   Settings,
   Plus,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from "lucide-react";
 import Link from "next/link";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
@@ -20,11 +21,12 @@ import { hasActiveSubscription } from "@/lib/subscription/utils";
 import { Crown } from "lucide-react";
 
 /**
- * Dashboard page showing user's community activity
+ * Dashboard page showing user's community and event activity
  * 
  * Displays:
  * - Community section with browse and create options
- * Note: Events are shown inside individual community pages, not on the dashboard
+ * - Event section with browse option
+ * Note: Events are also shown inside individual community pages
  */
 export default async function DashboardPage() {
   // Get session from better-auth
@@ -176,7 +178,16 @@ export default async function DashboardPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <>
+                  {/* Show Browse Communities button when user has communities */}
+                  <div className="flex items-center justify-end mb-4">
+                    <Button variant="outline" asChild>
+                      <Link href="/communities">
+                        Browse Communities
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {userCommunities.map((item) => (
                     <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
                       {/* Community Image */}
@@ -223,8 +234,38 @@ export default async function DashboardPage() {
                       </CardContent>
                     </Card>
                   ))}
-                </div>
+                  </div>
+                </>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Event Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Event
+              </CardTitle>
+              <CardDescription>
+                Browse existing events
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground mb-2">You haven't joined any events yet</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Browse existing events to discover and join exciting activities
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button variant="outline" asChild>
+                    <Link href="/events">
+                      Browse Events
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -9,14 +9,19 @@ import { MediaForm } from "./media";
 import { ReviewForm } from "./review";
 
 /**
- * Online Event Creation Form
+ * Online Event Creation/Edit Form
  * 
- * Multi-page form for creating online events
+ * Multi-page form for creating or editing online events
  * Based on PRD: Online Event Creation - 7 pages total
+ * 
+ * If eventId and initialData are provided, form is in edit mode.
+ * Otherwise, form is in create mode.
  */
 interface OnlineEventFormProps {
   userId: string;
   communityId?: number; // Optional - if provided, event will be associated with this community
+  eventId?: string; // Optional - if provided, form is in edit mode
+  initialData?: Partial<OnlineEventFormData>; // Optional - pre-filled data for editing
 }
 
 /**
@@ -62,9 +67,13 @@ interface OnlineEventFormData {
   brandColor: string;
 }
 
-export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
+export function OnlineEventForm({ userId, communityId, eventId, initialData }: OnlineEventFormProps) {
   // Store all form data
-  const [formData, setFormData] = useState<Partial<OnlineEventFormData>>({});
+  // Initialize with initialData if provided (edit mode)
+  const [formData, setFormData] = useState<Partial<OnlineEventFormData>>(initialData || {});
+  
+  // Determine if we're in edit mode
+  const isEditMode = !!eventId;
   
   // Store navigation function from MultiPageForm
   // This allows ReviewForm to navigate to specific pages
@@ -111,12 +120,18 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
   };
 
   /**
-   * Publish event
+   * Publish or update event
+   * If eventId is provided, updates existing event
+   * Otherwise, creates new event
    */
   const handlePublish = async () => {
     try {
-      const response = await fetch("/api/events/create", {
-        method: "POST",
+      // Determine API endpoint and method based on edit mode
+      const endpoint = isEditMode ? `/api/events/${eventId}` : "/api/events/create";
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -134,16 +149,20 @@ export function OnlineEventForm({ userId, communityId }: OnlineEventFormProps) {
       if (!response.ok) {
         // Try to get error message from response
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || `Failed to publish event (${response.status})`;
+        const errorMessage = errorData.error || `Failed to ${isEditMode ? "update" : "publish"} event (${response.status})`;
         throw new Error(errorMessage);
       }
 
       const result = await response.json();
       // Redirect to event page using the URL from API response
       // API returns community-scoped URL if event belongs to a community
-      window.location.href = result.eventUrl || `/events/${result.eventId}`;
+      // In edit mode, use the existing eventId
+      const redirectUrl = isEditMode 
+        ? (result.eventUrl || `/events/${eventId}`)
+        : (result.eventUrl || `/events/${result.eventId}`);
+      window.location.href = redirectUrl;
     } catch (error) {
-      console.error("Error publishing event:", error);
+      console.error(`Error ${isEditMode ? "updating" : "publishing"} event:`, error);
       // Re-throw with better error message
       throw error;
     }

@@ -321,20 +321,40 @@ export const eventTags = mysqlTable("event_tags", {
  * 
  * Stores user registrations for events.
  * Tracks who has registered for which events.
+ * 
+ * Required fields (compulsory):
+ * - user_id: The user who registered (foreign key to users table)
+ * - event_id: The event they registered for (foreign key to events table)
+ * - community_id: The community that owns the event (foreign key to communities table)
+ * - joined_at: Timestamp when the user joined/registered for the event
  */
 export const eventRegistrations = mysqlTable("event_registrations", {
   // Primary key - UUID string
   registrationId: varchar("registration_id", { length: 255 }).primaryKey(),
   
-  // Foreign key to events table
+  // Foreign key to events table - REQUIRED (compulsory)
   eventId: varchar("event_id", { length: 255 })
     .notNull()
     .references(() => events.eventId, { onDelete: "cascade" }),
   
-  // Foreign key to users table
+  // Foreign key to users table - REQUIRED (compulsory)
   userId: varchar("user_id", { length: 255 })
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  
+  // Foreign key to communities table - REQUIRED (compulsory)
+  // Links the registration to the community that owns the event
+  communityId: int("community_id")
+    .notNull()
+    .references(() => communities.id, { onDelete: "restrict" }),
+  
+  // Timestamp when user joined/registered - REQUIRED (compulsory)
+  // This is the primary timestamp for when the user registered
+  joinedAt: timestamp("joined_at", {
+    mode: "date",
+  })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
   
   // Registration status: confirmed, cancelled, waitlisted
   status: varchar("status", { length: 50 }).default("confirmed").notNull(),
@@ -342,7 +362,8 @@ export const eventRegistrations = mysqlTable("event_registrations", {
   // Guest count (for events that allow bringing guests)
   guestCount: int("guest_count").default(0),
   
-  // Timestamps
+  // Legacy field - kept for backward compatibility
+  // Use joinedAt as the primary timestamp
   registeredAt: timestamp("registered_at", {
     mode: "date",
   })

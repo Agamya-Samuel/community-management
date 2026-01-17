@@ -2,8 +2,8 @@ import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { events, onlineEventMetadata, onsiteEventMetadata, eventTags } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { events, onlineEventMetadata, onsiteEventMetadata, eventTags, communityAdmins } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { RegisterButton } from "@/components/events/register-button";
 
 /**
  * Event Detail Page
@@ -106,6 +107,40 @@ export default async function EventDetailPage({
     .where(eq(eventTags.eventId, eventId));
 
   const tags = tagsResult.map((tag) => tag.tag);
+
+  // Check if current user has organizer permissions
+  // User can edit if they are:
+  // 1. Primary organizer of the event
+  // 2. Have organizer role in the community (owner, organizer, coorganizer, event_organizer)
+  let canEditEvent = false;
+  if (session?.user) {
+    // Check if user is primary organizer
+    if (eventData.primaryOrganizerId === session.user.id) {
+      canEditEvent = true;
+    }
+    // Check if user has organizer role in the community
+    else if (eventData.communityId) {
+      const adminResult = await db
+        .select({ role: communityAdmins.role })
+        .from(communityAdmins)
+        .where(
+          and(
+            eq(communityAdmins.userId, session.user.id),
+            eq(communityAdmins.communityId, eventData.communityId)
+          )
+        )
+        .limit(1);
+      
+      if (adminResult.length > 0) {
+        const userRole = adminResult[0].role;
+        // Allow editing for owner, organizer, coorganizer, and event_organizer roles
+        const allowedRoles = ["owner", "organizer", "coorganizer", "event_organizer"];
+        if (allowedRoles.includes(userRole)) {
+          canEditEvent = true;
+        }
+      }
+    }
+  }
 
   // Format dates for display
   // Extract date and time from datetime objects
@@ -212,6 +247,7 @@ export default async function EventDetailPage({
                   fill
                   className="object-cover"
                   priority
+                  unoptimized={event.bannerUrl.startsWith("http")}
                 />
               </div>
             ) : (
@@ -269,12 +305,16 @@ export default async function EventDetailPage({
                 {/* Action Buttons */}
                 {session?.user && (
                   <div className="flex flex-col gap-2">
-                    <Button asChild>
-                      <Link href={`/events/${eventId}/edit`}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Event
-                      </Link>
-                    </Button>
+                    {/* Show edit button if user has organizer permissions */}
+                    {/* Organizers can edit events even if published */}
+                    {canEditEvent && (
+                      <Button asChild>
+                        <Link href={`/events/${eventId}/edit`}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit Event
+                        </Link>
+                      </Button>
+                    )}
                     <Button variant="outline">
                       <Share2 className="w-4 h-4 mr-2" />
                       Share
@@ -447,18 +487,17 @@ export default async function EventDetailPage({
             </Card>
 
 
-            {/* Registration Section - Placeholder */}
+            {/* Registration Section */}
             <Card>
               <CardHeader>
                 <CardTitle>Registration</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button className="w-full" size="lg">
-                  Register for Event
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Registration functionality coming soon
-                </p>
+                <RegisterButton 
+                  eventId={eventId}
+                  eventStatus={event.status}
+                  className="w-full"
+                />
               </CardContent>
             </Card>
           </div>
