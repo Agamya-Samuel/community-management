@@ -206,6 +206,5 @@ export const paymentTransactions = mysqlTable("payment_transactions", {
     columns: [table.subscriptionId],
     foreignColumns: [subscriptions.subscriptionId],
     name: "payment_transactions_subscription_id_fk",
-    onDelete: "set null",
-  }),
+  }).onDelete("set null"),
 }));
