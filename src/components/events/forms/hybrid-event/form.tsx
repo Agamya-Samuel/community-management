@@ -9,14 +9,19 @@ import { MediaForm } from "../online-event/media";
 import { ReviewForm } from "../online-event/review";
 
 /**
- * Hybrid Event Creation Form
+ * Hybrid Event Creation/Edit Form
  * 
- * Multi-page form for creating hybrid events (both online and onsite)
+ * Multi-page form for creating or editing hybrid events (both online and onsite)
  * Combines features from both online and onsite event forms
+ * 
+ * If eventId and initialData are provided, form is in edit mode.
+ * Otherwise, form is in create mode.
  */
 interface HybridEventFormProps {
   userId: string;
   communityId?: number; // Optional - if provided, event will be associated with this community
+  eventId?: string; // Optional - if provided, form is in edit mode
+  initialData?: Partial<HybridEventFormData>; // Optional - pre-filled data for editing
 }
 
 /**
@@ -79,9 +84,13 @@ interface HybridEventFormData {
   brandColor: string;
 }
 
-export function HybridEventForm({ userId, communityId }: HybridEventFormProps) {
+export function HybridEventForm({ userId, communityId, eventId, initialData }: HybridEventFormProps) {
   // Store all form data
-  const [formData, setFormData] = useState<Partial<HybridEventFormData>>({});
+  // Initialize with initialData if provided (edit mode)
+  const [formData, setFormData] = useState<Partial<HybridEventFormData>>(initialData || {});
+  
+  // Determine if we're in edit mode
+  const isEditMode = !!eventId;
 
   /**
    * Update form data for a specific page
@@ -123,12 +132,18 @@ export function HybridEventForm({ userId, communityId }: HybridEventFormProps) {
   };
 
   /**
-   * Publish event
+   * Publish or update event
+   * If eventId is provided, updates existing event
+   * Otherwise, creates new event
    */
   const handlePublish = async () => {
     try {
-      const response = await fetch("/api/events/create", {
-        method: "POST",
+      // Determine API endpoint and method based on edit mode
+      const endpoint = isEditMode ? `/api/events/${eventId}` : "/api/events/create";
+      const method = isEditMode ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -146,16 +161,19 @@ export function HybridEventForm({ userId, communityId }: HybridEventFormProps) {
       if (!response.ok) {
         // Try to get error message from response
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || `Failed to publish event (${response.status})`;
+        const errorMessage = errorData.error || `Failed to ${isEditMode ? "update" : "publish"} event (${response.status})`;
         throw new Error(errorMessage);
       }
 
       const result = await response.json();
       // Redirect to event page using the URL from API response
-      // API returns community-scoped URL if event belongs to a community
-      window.location.href = result.eventUrl || `/events/${result.eventId}`;
+      // In edit mode, use the existing eventId
+      const redirectUrl = isEditMode 
+        ? (result.eventUrl || `/events/${eventId}`)
+        : (result.eventUrl || `/events/${result.eventId}`);
+      window.location.href = redirectUrl;
     } catch (error) {
-      console.error("Error publishing event:", error);
+      console.error(`Error ${isEditMode ? "updating" : "publishing"} event:`, error);
       throw error;
     }
   };
