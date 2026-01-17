@@ -78,7 +78,7 @@ export function DateTimePicker({
 
   const [open, setOpen] = React.useState(false);
   const [tempDate, setTempDate] = React.useState<Date | undefined>(selectedDate);
-  const [tempTime, setTempTime] = React.useState(getTimeComponents(dateTime));
+  const [tempTime, setTempTime] = React.useState<{ hour: number; minute: number; ampm: "AM" | "PM" }>(getTimeComponents(dateTime));
 
   // Update temp values when value prop changes
   React.useEffect(() => {
