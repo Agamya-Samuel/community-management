@@ -169,10 +169,10 @@ export default async function EditEventPage({
           passcode: onlineMetadata?.passcode || "",
           platformType: onlineMetadata?.platformType || "",
           accessControl: onlineMetadata?.accessControl || "",
-          waitingRoom: onlineMetadata?.waitingRoom || false,
+          waitingRoom: onlineMetadata?.waitingRoomEnabled || false,
           maxParticipants: onlineMetadata?.maxParticipants || null,
           recordingEnabled: onlineMetadata?.recordingEnabled || false,
-          recordingAccess: onlineMetadata?.recordingAccess || "",
+          recordingAccess: onlineMetadata?.recordingAvailability || "",
         }
       : {}),
     ...(eventData.eventType === "onsite" || eventData.eventType === "hybrid"
