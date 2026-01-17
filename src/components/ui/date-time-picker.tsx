@@ -67,12 +67,12 @@ export function DateTimePicker({
   const selectedDate = dateTime ? new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate()) : undefined;
   
   // Extract time components (12-hour format)
-  const getTimeComponents = (date: Date | undefined) => {
-    if (!date) return { hour: 12, minute: 0, ampm: "AM" as "AM" | "PM" };
+  const getTimeComponents = (date: Date | undefined): { hour: number; minute: number; ampm: "AM" | "PM" } => {
+    if (!date) return { hour: 12, minute: 0, ampm: "AM" as const };
     const hour24 = date.getHours();
     const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
     const minute = date.getMinutes();
-    const ampm = hour24 >= 12 ? "PM" : "AM";
+    const ampm = (hour24 >= 12 ? "PM" : "AM") as "AM" | "PM";
     return { hour: hour12, minute, ampm };
   };
 
