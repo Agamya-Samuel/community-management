@@ -31,7 +31,14 @@ export async function POST(request: NextRequest) {
       headers: request.headers,
     });
 
-    return response;
+    // Convert the plain object response to a proper NextResponse
+    if (response.url) {
+      if (response.redirect) {
+        return NextResponse.redirect(new URL(response.url));
+      }
+      return NextResponse.json(response);
+    }
+    return NextResponse.json({ error: "Invalid response from authentication service" }, { status: 500 });
   } catch (error) {
     console.error("Link Google account error:", error);
     return NextResponse.json(
