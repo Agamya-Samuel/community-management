@@ -7,12 +7,15 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 
 /**
- * Request schema for Wikimedia subscription request
- * Required fields: wikimediaUsername, contributionType, purposeStatement
- * All other fields are optional
+ * Request schema for subscription request
+ * Required fields depend on IS_MEDIA_WIKI mode:
+ * - Global Mode (IS_MEDIA_WIKI=true): wikimediaUsername is optional
+ * - Standard Mode: wikimediaUsername is required
  */
-const requestSchema = z.object({
-  wikimediaUsername: z.string().min(1),
+const createRequestSchema = (isGlobalMode: boolean) => z.object({
+  wikimediaUsername: isGlobalMode
+    ? z.string().optional()
+    : z.string().min(1),
   wikimediaProfileUrl: z.string().url().optional(),
   yearsActive: z.number().int().positive().optional(),
   contributionType: z.enum([
@@ -85,6 +88,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Determine mode based on environment variable
+    const isGlobalMode = process.env.IS_MEDIA_WIKI === "true" || process.env.IS_MEDIAWIKI === "true";
+    const requestSchema = createRequestSchema(isGlobalMode);
 
     // Parse and validate request body
     const body = await request.json();

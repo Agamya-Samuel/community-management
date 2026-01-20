@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 /**
  * Venue & Location Form for Onsite Events
@@ -83,7 +82,7 @@ export function VenueLocationForm({ data, onChange }: VenueLocationFormProps) {
   /**
    * Update form data and notify parent
    */
-  const updateField = (field: keyof VenueLocationData, value: any) => {
+  const updateField = (field: keyof VenueLocationData, value: string | boolean) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);
     onChange(updated);

@@ -67,9 +67,9 @@ export async function getUserSubscription(userId: string) {
   try {
     // Get user with subscription ID
     const userResult = await db
-      .select({ 
+      .select({
         subscriptionId: users.subscriptionId,
-        userType: users.userType 
+        userType: users.userType
       })
       .from(users)
       .where(eq(users.id, userId))
@@ -139,4 +139,34 @@ export async function requirePremiumSubscription(userId: string): Promise<void> 
   if (!hasSubscription) {
     throw new Error("Premium subscription required. Please upgrade to Premium to access this feature.");
   }
+}
+
+/**
+ * Determine the subscription gate type (payment vs request) based on configuration and user status
+ * 
+ * Logic:
+ * 1. If IS_MEDIA_WIKI (or IS_MEDIAWIKI) is true, EVERYONE must request access (gateType = "request")
+ * 2. If user is a MediaWiki user (has mediawikiUsername), they request access (gateType = "request")
+ * 3. Otherwise, user must pay (gateType = "payment")
+ * 
+ * @param hasMediaWikiUsername - Whether the user has a MediaWiki username
+ * @returns "payment" | "request"
+ */
+export function getSubscriptionGateType(hasMediaWikiUsername: boolean): "payment" | "request" {
+  // Check for configuration
+  // Support both IS_MEDIA_WIKI (standard) and IS_MEDIAWIKI (user request variant)
+  const isMediaWikiMode = process.env.IS_MEDIA_WIKI === "true" || process.env.IS_MEDIAWIKI === "true";
+
+  if (isMediaWikiMode) {
+    // Global Request Mode: Everyone requests access
+    return "request";
+  }
+
+  if (hasMediaWikiUsername) {
+    // Standard Mode: MediaWiki users request access
+    return "request";
+  }
+
+  // Default: Standard Google users pay
+  return "payment";
 }

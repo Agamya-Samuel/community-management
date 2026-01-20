@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+// import { db } from "@/db";
+// import * as schema from "@/db/schema";
+// import { eq, and } from "drizzle-orm";
 
 /**
  * Link Google account API route
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get session to verify user is authenticated
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get session to verify user is authenticated
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }

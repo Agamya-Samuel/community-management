@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
+// import { auth } from "@/lib/auth/config";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Send email directly using Resend (the same way it's configured in auth config)
     const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-    
+
     if (!resend) {
       console.error("Resend API key not configured. Cannot send verification email.");
       return NextResponse.json(

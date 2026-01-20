@@ -3,10 +3,10 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   Calendar,
   Clock,
   Globe,
@@ -26,7 +26,7 @@ import Image from "next/image";
  */
 export default async function EventsPage() {
   // Get session (optional - events page can be public)
-  const session = await auth.api.getSession({
+  await auth.api.getSession({
     headers: await headers(),
   });
 
@@ -109,7 +109,7 @@ export default async function EventsPage() {
             {allEvents.map((event) => {
               const eventTypeDisplay = getEventTypeDisplay(event.eventType);
               const EventTypeIcon = eventTypeDisplay.icon;
-              
+
               return (
                 <Link
                   key={event.eventId}

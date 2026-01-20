@@ -692,7 +692,7 @@ Review Your Event
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Pre-Flight Check:
+Pre-Submit Check:
 ✓ All required fields complete
 ✓ Event date is in future
 ✓ Venue address is valid

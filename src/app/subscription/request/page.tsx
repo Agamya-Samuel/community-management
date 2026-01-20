@@ -66,8 +66,13 @@ export default async function SubscriptionRequestPage() {
     }
   }
 
-  // If not a Wikimedia user, redirect to upgrade page
-  if (!hasMediaWiki && !mediawikiUsername) {
+  // If not a Wikimedia user AND Global MediaWiki mode is false, redirect to upgrade page
+  // If Global mode is true, everyone is allowed to request access
+  // IS_MEDIA_WIKI=true OR IS_MEDIAWIKI=true: All users can request access
+  // IS_MEDIA_WIKI=false: Only MediaWiki users can request access
+  const isGlobalMediaWikiMode = process.env.IS_MEDIA_WIKI === "true" || process.env.IS_MEDIAWIKI === "true";
+
+  if (!hasMediaWiki && !mediawikiUsername && !isGlobalMediaWikiMode) {
     redirect("/subscription/upgrade");
   }
 
@@ -90,7 +95,10 @@ export default async function SubscriptionRequestPage() {
               </h1>
             </div>
             <p className="text-muted-foreground text-lg">
-              As a Wikimedia contributor, you're eligible for complimentary Premium access
+              {isGlobalMediaWikiMode
+                ? "Request complimentary Premium access to unlock all features"
+                : "As a Wikimedia contributor, you're eligible for complimentary Premium access"
+              }
             </p>
           </div>
         </div>
@@ -98,21 +106,27 @@ export default async function SubscriptionRequestPage() {
         {/* Info Card */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Wikimedia Contributor Program</CardTitle>
+            <CardTitle>
+              {isGlobalMediaWikiMode ? "Premium Access Program" : "Wikimedia Contributor Program"}
+            </CardTitle>
             <CardDescription>
-              We value the contributions of Wikimedia community members
+              {isGlobalMediaWikiMode
+                ? "Request access to unlock all premium features"
+                : "We value the contributions of Wikimedia community members"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm text-foreground">
               <p>
-                If you're an active Wikimedia contributor, you can request
-                complimentary Premium access to our platform.
+                {isGlobalMediaWikiMode
+                  ? "Submit a request to get complimentary Premium access to our platform."
+                  : "If you're an active Wikimedia contributor, you can request complimentary Premium access to our platform."
+                }
               </p>
               <p>
                 Your request will be reviewed by our team within 48-72 hours.
-                We'll verify your Wikimedia contributions and get back to you
-                via email.
+                We&apos;ll verify your information and get back to you via email.
               </p>
               <p className="font-semibold">
                 Premium access includes all features: unlimited communities,
@@ -127,12 +141,16 @@ export default async function SubscriptionRequestPage() {
           <CardHeader>
             <CardTitle>Submit Your Request</CardTitle>
             <CardDescription>
-              Please provide information about your Wikimedia contributions
+              {isGlobalMediaWikiMode
+                ? "Please provide information about yourself"
+                : "Please provide information about your Wikimedia contributions"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             <SubscriptionRequestForm
               defaultWikimediaUsername={mediawikiUsername || undefined}
+              isGlobalMode={isGlobalMediaWikiMode}
             />
           </CardContent>
         </Card>

@@ -7,17 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, Suspense } from "react"
 import { Globe } from "lucide-react"
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Get callback URL from query params, default to complete-profile
+  const callbackUrl = searchParams.get("callbackUrl") || "/auth/complete-profile"
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,8 +39,13 @@ export default function LoginPage() {
       if (result.error) {
         setError(result.error.message || "Invalid email or password")
       } else {
-        // Redirect to profile completion first, which will then redirect to dashboard if profile is complete
-        router.push("/auth/complete-profile")
+        // Always go through complete-profile first to check if profile needs completion
+        // Pass the original callback URL as a redirect parameter
+        if (callbackUrl !== "/auth/complete-profile") {
+          router.push(`/auth/complete-profile?redirect=${encodeURIComponent(callbackUrl)}`)
+        } else {
+          router.push("/auth/complete-profile")
+        }
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
@@ -51,18 +60,24 @@ export default function LoginPage() {
 
     try {
       const { authClient } = await import("@/lib/auth/client")
-      
+
+      // For social login, we need to use the callback URL
+      // Note: Social logins will redirect through complete-profile first for new users
+      const socialCallbackUrl = callbackUrl !== "/auth/complete-profile"
+        ? `/auth/complete-profile?redirect=${encodeURIComponent(callbackUrl)}`
+        : "/auth/complete-profile"
+
       // Google uses signIn.social (built-in provider)
       // MediaWiki uses signIn.oauth2 (generic OAuth provider)
       const result = provider === "google"
         ? await authClient.signIn.social({
-            provider,
-            callbackURL: "/auth/complete-profile",
-          })
+          provider,
+          callbackURL: socialCallbackUrl,
+        })
         : await authClient.signIn.oauth2({
-            providerId: provider,
-            callbackURL: "/auth/complete-profile",
-          })
+          providerId: provider,
+          callbackURL: socialCallbackUrl,
+        })
 
       // Both methods return { data, error }
       // On success, it automatically redirects by default
@@ -70,7 +85,7 @@ export default function LoginPage() {
       if (result.error) {
         console.error(`${provider} authentication error:`, result.error)
         setError(
-          result.error.message || 
+          result.error.message ||
           `${provider} authentication failed. Please check your configuration.`
         )
         setSocialLoading(null)
@@ -83,8 +98,8 @@ export default function LoginPage() {
     } catch (error: unknown) {
       console.error(`${provider} authentication exception:`, error)
       setError(
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : `${provider} authentication failed. Please check your configuration and environment variables.`
       )
       setSocialLoading(null)
@@ -202,8 +217,14 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
-              <Link href="/auth/sign-up" className="text-primary hover:text-primary/80 font-medium">
+              <span className="text-muted-foreground">Don&apos;t have an account? </span>
+              <Link
+                href={callbackUrl !== "/auth/complete-profile"
+                  ? `/auth/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/auth/sign-up"
+                }
+                className="text-primary hover:text-primary/80 font-medium"
+              >
                 Sign up
               </Link>
             </div>
@@ -217,5 +238,18 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// Default export with Suspense wrapper for useSearchParams
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { hasActiveSubscription } from "@/lib/subscription/utils";
+import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
 import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { OnlineEventForm } from "@/components/events/forms/online-event/form";
 
@@ -39,10 +39,13 @@ export default async function CreateEventTypePage({
 
   // If no subscription, show subscription gate
   if (!hasSubscription) {
+    const gateType = getSubscriptionGateType(!!user.mediawikiUsername);
+
     return (
       <SubscriptionGate
         feature="events"
         action="Creating events"
+        gateType={gateType}
       />
     );
   }
@@ -53,8 +56,8 @@ export default async function CreateEventTypePage({
   // Get communityId from search params if provided
   // This allows events to be associated with a community when created from a community page
   const resolvedSearchParams = await Promise.resolve(searchParams);
-  const communityId = resolvedSearchParams.communityId 
-    ? parseInt(resolvedSearchParams.communityId, 10) 
+  const communityId = resolvedSearchParams.communityId
+    ? parseInt(resolvedSearchParams.communityId, 10)
     : undefined;
 
   // Validate communityId if provided

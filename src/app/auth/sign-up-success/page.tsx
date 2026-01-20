@@ -14,7 +14,7 @@ export default function SignUpSuccessPage() {
             </div>
             <CardTitle className="text-2xl font-semibold">Check your email</CardTitle>
             <CardDescription className="text-base">
-              We've sent you a confirmation link to complete your registration
+              We&apos;ve sent you a confirmation link to complete your registration
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -31,7 +31,7 @@ export default function SignUpSuccessPage() {
 
             <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">
-                Didn't receive the email? Check your spam folder or try signing up again.
+                Didn&apos;t receive the email? Check your spam folder or try signing up again.
               </p>
 
               <div className="flex flex-col gap-2">

@@ -11,14 +11,14 @@ import { CheckCircle2, Edit } from "lucide-react";
  * Based on PRD: Online Event Creation - Page 7
  */
 interface ReviewFormProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
-  onPublish: () => Promise<void>;
   // Function to navigate to a specific page by index
   // Page indices: 0=Basic Details, 1=Date & Time, 2=Platform & Access, 3=Media, 4=Review
   onNavigateToPage?: (pageIndex: number) => void;
 }
 
-export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProps) {
+export function ReviewForm({ data, onNavigateToPage }: ReviewFormProps) {
   /**
    * Check if all required fields are filled
    */
@@ -49,8 +49,8 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Basic Details</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => onNavigateToPage?.(0)}
             >
@@ -69,8 +69,8 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Date & Time</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => onNavigateToPage?.(1)}
             >
@@ -90,8 +90,8 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Platform & Access</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => onNavigateToPage?.(2)}
             >
@@ -109,8 +109,8 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Registration</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => onNavigateToPage?.(2)}
             >
@@ -128,8 +128,8 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Team</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => onNavigateToPage?.(0)}
             >
@@ -147,8 +147,8 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Media</CardTitle>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => onNavigateToPage?.(3)}
             >
@@ -164,10 +164,10 @@ export function ReviewForm({ data, onPublish, onNavigateToPage }: ReviewFormProp
         </Card>
       </div>
 
-      {/* Pre-Flight Check */}
+      {/* Pre-Submit Check */}
       <Card>
         <CardHeader>
-          <CardTitle>Pre-Flight Check</CardTitle>
+          <CardTitle>Pre-Submit Check</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {validationChecks.map((check, index) => (

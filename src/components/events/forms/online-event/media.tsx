@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export function MediaForm({ data, onChange }: MediaFormProps) {
   /**
    * Update form data and notify parent
    */
-  const updateField = (field: keyof MediaData, value: any) => {
+  const updateField = (field: keyof MediaData, value: string | string[]) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);
     onChange(updated);
@@ -61,15 +62,15 @@ export function MediaForm({ data, onChange }: MediaFormProps) {
         />
         {formData.bannerUrl && (
           <div className="mt-2 space-y-2">
-            <img
-              src={formData.bannerUrl}
-              alt="Banner preview"
-              className="max-h-48 rounded border"
-              onError={(e) => {
-                // Hide image if URL is invalid
-                e.currentTarget.style.display = "none";
-              }}
-            />
+            <div className="relative w-full h-48 rounded border overflow-hidden">
+              <Image
+                src={formData.bannerUrl}
+                alt="Banner preview"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
             <Button
               type="button"
               variant="outline"
@@ -100,15 +101,15 @@ export function MediaForm({ data, onChange }: MediaFormProps) {
         />
         {formData.thumbnailUrl && (
           <div className="mt-2 space-y-2">
-            <img
-              src={formData.thumbnailUrl}
-              alt="Thumbnail preview"
-              className="max-h-32 rounded border"
-              onError={(e) => {
-                // Hide image if URL is invalid
-                e.currentTarget.style.display = "none";
-              }}
-            />
+            <div className="relative w-full h-32 rounded border overflow-hidden">
+              <Image
+                src={formData.thumbnailUrl}
+                alt="Thumbnail preview"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
             <Button
               type="button"
               variant="outline"
@@ -136,15 +137,15 @@ export function MediaForm({ data, onChange }: MediaFormProps) {
         />
         {formData.logoUrl && (
           <div className="mt-2 space-y-2">
-            <img
-              src={formData.logoUrl}
-              alt="Logo preview"
-              className="max-h-24 rounded border"
-              onError={(e) => {
-                // Hide image if URL is invalid
-                e.currentTarget.style.display = "none";
-              }}
-            />
+            <div className="relative w-full h-24 rounded border overflow-hidden">
+              <Image
+                src={formData.logoUrl}
+                alt="Logo preview"
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </div>
             <Button
               type="button"
               variant="outline"

@@ -4,7 +4,6 @@ import * as React from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -31,7 +30,6 @@ export function DateTimePicker({
   value,
   onChange,
   min,
-  required,
   id,
   placeholder = "dd-mm-yyyy --:--",
   disabled,
@@ -58,14 +56,14 @@ export function DateTimePicker({
         return dt;
       }
       return undefined;
-    } catch (e) {
+    } catch {
       return undefined;
     }
   };
 
   const dateTime = parseDateTime(value);
   const selectedDate = dateTime ? new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate()) : undefined;
-  
+
   // Extract time components (12-hour format)
   const getTimeComponents = (date: Date | undefined): { hour: number; minute: number; ampm: "AM" | "PM" } => {
     if (!date) return { hour: 12, minute: 0, ampm: "AM" as const };
@@ -96,6 +94,7 @@ export function DateTimePicker({
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   /**
@@ -132,7 +131,7 @@ export function DateTimePicker({
         // Scroll to selected hour
         const hourButton = document.querySelector(`[data-hour="${tempTime.hour}"]`) as HTMLElement;
         hourButton?.scrollIntoView({ behavior: "smooth", block: "center" });
-        
+
         // Scroll to selected minute
         const minuteButton = document.querySelector(`[data-minute="${tempTime.minute}"]`) as HTMLElement;
         minuteButton?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -238,7 +237,7 @@ export function DateTimePicker({
     if (dateTime) {
       try {
         return format(dateTime, "dd-MM-yyyy HH:mm");
-      } catch (e) {
+      } catch {
         // Fallback formatting if date-fns fails
         const year = dateTime.getFullYear();
         const month = String(dateTime.getMonth() + 1).padStart(2, "0");
@@ -248,7 +247,7 @@ export function DateTimePicker({
         return `${day}-${month}-${year} ${hours}:${mins}`;
       }
     }
-    
+
     // If no value prop, but we have tempDate and tempTime (user is selecting)
     // Show the current selection even if not yet saved to parent
     if (tempDate) {
@@ -266,7 +265,7 @@ export function DateTimePicker({
       const mins = String(tempTime.minute).padStart(2, "0");
       return `${day}-${month}-${year} ${hours}:${mins}`;
     }
-    
+
     return "";
   }, [dateTime, tempDate, tempTime]);
 
@@ -301,7 +300,11 @@ export function DateTimePicker({
               onSelect={handleDateSelect}
               disabled={(date) => {
                 if (minDate) {
-                  return date < minDate;
+                  // Compare only the date portion (ignoring time)
+                  // This allows selecting today even if min time is later in the day
+                  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                  const minDateOnly = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+                  return dateOnly < minDateOnly;
                 }
                 return false;
               }}

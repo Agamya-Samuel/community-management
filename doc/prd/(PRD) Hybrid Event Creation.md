@@ -923,7 +923,7 @@ Review Your Hybrid Event
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Pre-Flight Check:
+Pre-Submit Check:
 ✓ All required fields complete
 ✓ Both venue and virtual platform configured
 ✓ Onsite capacity matches venue capacity

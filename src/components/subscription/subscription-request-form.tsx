@@ -29,12 +29,15 @@ import { toast } from "sonner";
 
 /**
  * Form schema for subscription request
- * Required fields: wikimediaUsername, contributionType, purposeStatement
- * All other fields are optional
+ * Required fields depend on mode:
+ * - Global Mode: Only purposeStatement is required
+ * - Standard Mode: wikimediaUsername, contributionType, purposeStatement are required
  * Note: Number fields are stored as strings in the form and converted in onSubmit
  */
-const requestSchema = z.object({
-  wikimediaUsername: z.string().min(1, "Wikimedia username is required"),
+const createRequestSchema = (isGlobalMode: boolean) => z.object({
+  wikimediaUsername: isGlobalMode
+    ? z.string().optional()
+    : z.string().min(1, "Wikimedia username is required"),
   wikimediaProfileUrl: z
     .string()
     .refine((val) => val === "" || z.string().url().safeParse(val).success, {
@@ -78,21 +81,27 @@ const requestSchema = z.object({
   notableProjects: z.string().max(300).optional(),
 });
 
-type RequestFormData = z.infer<typeof requestSchema>;
+type RequestFormData = z.infer<ReturnType<typeof createRequestSchema>>;
 
 interface SubscriptionRequestFormProps {
   defaultWikimediaUsername?: string;
+  isGlobalMode?: boolean;
 }
 
 /**
- * Form component for Wikimedia users to request complimentary Premium access
+ * Form component for users to request complimentary Premium access
+ * In Global Mode (IS_MEDIA_WIKI=true): All users can request, wikimediaUsername is optional
+ * In Standard Mode: Only MediaWiki users can request, wikimediaUsername is required
  */
 export function SubscriptionRequestForm({
   defaultWikimediaUsername,
+  isGlobalMode = false,
 }: SubscriptionRequestFormProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  const requestSchema = createRequestSchema(isGlobalMode);
 
   const form = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema),
@@ -175,7 +184,7 @@ export function SubscriptionRequestForm({
           Request Submitted
         </h3>
         <p className="text-muted-foreground mb-4">
-          Your request has been submitted successfully. We'll review it within
+          Your request has been submitted successfully. We&apos;ll review it within
           48-72 hours and get back to you via email.
         </p>
         <Button variant="outline" onClick={() => router.push("/dashboard")}>
@@ -194,7 +203,9 @@ export function SubscriptionRequestForm({
           name="wikimediaUsername"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Wikimedia Username *</FormLabel>
+              <FormLabel>
+                Wikimedia Username {isGlobalMode ? "(optional)" : "*"}
+              </FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -203,7 +214,10 @@ export function SubscriptionRequestForm({
                 />
               </FormControl>
               <FormDescription>
-                Your username on Wikimedia projects
+                {isGlobalMode
+                  ? "Optional: Enter your Wikimedia username if you have one"
+                  : "Your username on Wikimedia projects"
+                }
               </FormDescription>
               <FormMessage />
             </FormItem>

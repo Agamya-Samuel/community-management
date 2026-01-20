@@ -145,6 +145,7 @@ export function HackathonDetailsForm({ data, onChange }: HackathonDetailsFormPro
   /**
    * Update form data and notify parent
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof HackathonDetailsData, value: any) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);

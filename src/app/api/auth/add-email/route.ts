@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { Resend } from "resend";
 
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get session to verify user is authenticated
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser && existingUser.id !== user.id) {
       return NextResponse.json(
-        { 
+        {
           error: "This email is already associated with another account",
           conflict: true,
         },
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // Send email directly using Resend (the same way it's configured in auth config)
     const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-    
+
     if (!resend) {
       console.error("Resend API key not configured. Cannot send verification email.");
       return NextResponse.json(

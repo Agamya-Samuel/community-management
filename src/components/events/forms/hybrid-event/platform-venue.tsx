@@ -128,6 +128,7 @@ export function HybridPlatformVenueForm({ data, onChange }: HybridPlatformVenueF
   /**
    * Update form data and notify parent
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof HybridPlatformVenueData, value: any) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);
@@ -139,7 +140,7 @@ export function HybridPlatformVenueForm({ data, onChange }: HybridPlatformVenueF
    */
   const handleMeetingLinkChange = (link: string) => {
     updateField("meetingLink", link);
-    
+
     // Try to extract meeting ID from Zoom links
     if (link.includes("zoom.us/j/")) {
       const match = link.match(/zoom\.us\/j\/(\d+)/);

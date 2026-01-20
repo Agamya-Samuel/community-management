@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get session to verify user is authenticated
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch linked accounts from database
     // Use try-catch around the query to handle any database errors gracefully
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let linkedAccounts: any[] = [];
     try {
       linkedAccounts = await db.query.accounts.findMany({
@@ -47,13 +48,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // Log detailed error for debugging
     console.error("Get linked accounts error:", error);
-    
+
     // Return more detailed error information in development
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     return NextResponse.json(
-      { 
+      {
         error: "Failed to fetch linked accounts",
         message: errorMessage,
         ...(process.env.NODE_ENV === "development" && { stack: errorStack }),

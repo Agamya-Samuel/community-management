@@ -3,13 +3,16 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Loader2, UserPlus } from "lucide-react";
+import { CheckCircle2, Loader2, UserPlus, UserX } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth/client";
 
 /**
  * Event Registration Button Component
  * 
  * Handles event registration for users.
+ * - Checks if user is logged in
+ * - Redirects to login if not authenticated
  * - Checks if user is already registered
  * - Prevents duplicate registrations
  * - Shows appropriate UI based on registration status
@@ -21,39 +24,58 @@ interface RegisterButtonProps {
   className?: string;
 }
 
-export function RegisterButton({ 
-  eventId, 
+export function RegisterButton({
+  eventId,
   eventStatus,
-  className 
+  className
 }: RegisterButtonProps) {
   const router = useRouter();
   const [isRegistered, setIsRegistered] = useState(false);
+  const [wasRemoved, setWasRemoved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-  // Check registration status on component mount
+  // Check authentication and registration status on component mount
   useEffect(() => {
-    checkRegistrationStatus();
-  }, [eventId]);
+    const checkAuthAndRegistration = async () => {
+      try {
+        // Check authentication status
+        const session = await authClient.getSession();
+        const loggedIn = !!session?.data?.user;
+        setIsLoggedIn(loggedIn);
 
-  // Function to check if user is already registered
-  const checkRegistrationStatus = async () => {
-    try {
-      const response = await fetch(`/api/events/${eventId}/register`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setIsRegistered(data.registered || false);
+        if (loggedIn) {
+          // Only check registration status if logged in
+          const response = await fetch(`/api/events/${eventId}/register`);
+
+          if (response.ok) {
+            const data = await response.json();
+            setIsRegistered(data.registered || false);
+            setWasRemoved(data.wasRemoved || false);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking auth/registration status:", error);
+        setIsLoggedIn(false);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error checking registration status:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    checkAuthAndRegistration();
+  }, [eventId]);
 
   // Function to handle event registration
   const handleRegister = async () => {
+    // If user is not logged in, redirect to login page
+    if (!isLoggedIn) {
+      const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+      const callbackUrl = encodeURIComponent(currentUrl);
+      router.push(`/auth/login?callbackUrl=${callbackUrl}`);
+      return;
+    }
+
     // Check if event is published
     if (eventStatus !== "published") {
       toast.error("This event is not available for registration");
@@ -92,13 +114,29 @@ export function RegisterButton({
     }
   };
 
-  // Show loading state while checking registration
+  // Show loading state while checking auth/registration
   if (isLoading) {
     return (
       <Button className={className} size="lg" disabled>
         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
         Loading...
       </Button>
+    );
+  }
+
+  // If user was removed by organizer, show removed state
+  if (wasRemoved) {
+    return (
+      <div className="space-y-2">
+        <Button className={`${className} border-destructive/50 text-destructive`} size="lg" disabled variant="outline">
+          <UserX className="w-4 h-4 mr-2" />
+          Removed from Event
+        </Button>
+        <p className="text-xs text-destructive/80 text-center">
+          You have been removed from this event by the organizer.
+          Please contact the organizer if you have any questions.
+        </p>
+      </div>
     );
   }
 
@@ -117,12 +155,12 @@ export function RegisterButton({
     );
   }
 
-  // Show register button if not registered
+  // Show register button
   return (
     <div className="space-y-2">
-      <Button 
-        className={className} 
-        size="lg" 
+      <Button
+        className={className}
+        size="lg"
         onClick={handleRegister}
         disabled={isRegistering || eventStatus !== "published"}
       >
@@ -146,4 +184,3 @@ export function RegisterButton({
     </div>
   );
 }
-

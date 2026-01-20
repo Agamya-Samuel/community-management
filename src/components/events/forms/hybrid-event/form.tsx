@@ -88,7 +88,7 @@ export function HybridEventForm({ userId, communityId, eventId, initialData }: H
   // Store all form data
   // Initialize with initialData if provided (edit mode)
   const [formData, setFormData] = useState<Partial<HybridEventFormData>>(initialData || {});
-  
+
   // Determine if we're in edit mode
   const isEditMode = !!eventId;
 
@@ -168,7 +168,7 @@ export function HybridEventForm({ userId, communityId, eventId, initialData }: H
       const result = await response.json();
       // Redirect to event page using the URL from API response
       // In edit mode, use the existing eventId
-      const redirectUrl = isEditMode 
+      const redirectUrl = isEditMode
         ? (result.eventUrl || `/events/${eventId}`)
         : (result.eventUrl || `/events/${result.eventId}`);
       window.location.href = redirectUrl;
@@ -221,7 +221,6 @@ export function HybridEventForm({ userId, communityId, eventId, initialData }: H
       component: (
         <ReviewForm
           data={formData}
-          onPublish={handlePublish}
         />
       ),
     },

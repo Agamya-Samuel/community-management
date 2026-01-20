@@ -7,16 +7,14 @@ import { eq, and, desc } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   ArrowLeft,
-  Users, 
+  Users,
   Calendar,
   Settings,
-  MapPin,
   Clock,
   Globe,
   User,
-  Shield,
   Building2,
   ExternalLink,
   Video,
@@ -75,7 +73,7 @@ export default async function CommunityDetailPage({
       .from(schema.communities)
       .where(eq(schema.communities.id, community.parentCommunityId))
       .limit(1);
-    
+
     if (parentResult.length > 0) {
       parentCommunity = parentResult[0];
     }
@@ -110,19 +108,19 @@ export default async function CommunityDetailPage({
         )
       )
       .limit(1);
-    
+
     if (userAdminResult.length > 0) {
       userRole = userAdminResult[0].role;
     }
   }
 
   // Format dates
-  const createdAt = community.createdAt 
+  const createdAt = community.createdAt
     ? new Date(community.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "Unknown";
 
   // Group admins by role for better display
@@ -253,7 +251,7 @@ export default async function CommunityDetailPage({
                     <div className="mb-3">
                       <p className="text-sm text-muted-foreground">
                         Part of{" "}
-                        <Link 
+                        <Link
                           href={`/communities/${parentCommunity.id}`}
                           className="text-primary hover:underline font-medium"
                         >
@@ -350,7 +348,7 @@ export default async function CommunityDetailPage({
                     {communityEvents.map((event) => {
                       const eventTypeDisplay = getEventTypeDisplay(event.eventType);
                       const EventTypeIcon = eventTypeDisplay.icon;
-                      
+
                       return (
                         <Link
                           key={event.eventId}
@@ -495,7 +493,7 @@ export default async function CommunityDetailPage({
                 {parentCommunity && (
                   <div>
                     <p className="text-sm font-medium text-foreground mb-1">Parent Community</p>
-                    <Link 
+                    <Link
                       href={`/communities/${parentCommunity.id}`}
                       className="text-sm text-primary hover:underline flex items-center gap-1"
                     >

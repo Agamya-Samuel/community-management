@@ -418,7 +418,7 @@ Review Your Edit-a-thon
 
 ────────────────────────────────────────
 
-Pre-Flight Check:
+Pre-Submit Check:
 ✓ All required fields complete
 ✓ Event date is in future
 ✓ Venue has WiFi (essential)

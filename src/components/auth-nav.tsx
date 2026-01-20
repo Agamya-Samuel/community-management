@@ -9,7 +9,6 @@ export function AuthNav() {
   // Authentication functionality removed - Supabase dependencies have been removed
   // TODO: Implement authentication state management here
   const [user, setUser] = useState<unknown>(null)
-  const [loading, setLoading] = useState(false)
 
   const router = useRouter()
 
@@ -18,15 +17,6 @@ export function AuthNav() {
     // TODO: Implement sign out logic here
     setUser(null)
     router.push("/")
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center space-x-4">
-        <div className="w-16 h-8 bg-muted animate-pulse rounded"></div>
-        <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
-      </div>
-    )
   }
 
   if (user) {

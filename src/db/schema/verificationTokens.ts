@@ -1,5 +1,5 @@
 import { mysqlTable, varchar, timestamp, text, index } from "drizzle-orm/mysql-core";
-import { sql } from "drizzle-orm";
+
 
 /**
  * Verification tokens table for email verification
@@ -17,30 +17,30 @@ export const verificationTokens = mysqlTable(
   {
     // Primary key - Better-auth expects a single id field
     id: varchar("id", { length: 255 }).primaryKey(),
-    
+
     // Email address that needs verification
     identifier: varchar("identifier", { length: 255 }).notNull(),
-    
+
     // Unique verification token sent to user
     // Better-auth expects this field to be named "value" (not "token")
     // Uses text type to accommodate OAuth state JSON objects which can be large
     // For email verification, this stores the token string
     // For OAuth flows, this stores JSON state objects
     value: text("value").notNull(),
-    
+
     // Token expiration timestamp (typically 24 hours from creation)
     // Better-auth expects this field to be named "expiresAt" (not "expires")
     expiresAt: timestamp("expires_at", {
       mode: "date",
       fsp: 3, // Fractional seconds precision
     }).notNull(),
-    
+
     // Timestamps for tracking
     createdAt: timestamp("created_at", {
       mode: "date",
       fsp: 3,
     }).defaultNow().notNull(),
-    
+
     updatedAt: timestamp("updated_at", {
       mode: "date",
       fsp: 3,

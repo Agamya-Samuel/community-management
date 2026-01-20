@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -100,7 +100,6 @@ export function ManageAdministration({
   // Check if user has permission to manage administration
   // Only owner and organizer can manage roles
   const canManage = userRole === "owner" || userRole === "organizer";
-  const userRoleLevel = ROLE_HIERARCHY[userRole] || 0;
 
   // Fetch administrators
   useEffect(() => {
@@ -138,11 +137,11 @@ export function ManageAdministration({
 
     // Check permissions
     const targetRoleLevel = ROLE_HIERARCHY[newRole] || 0;
-    
+
     // Owner can assign any role
     if (userRole === "owner") {
       // Owner can do anything
-    } 
+    }
     // Organizer can only assign roles up to coorganizer
     else if (userRole === "organizer") {
       if (newRole === "owner" || targetRoleLevel > ROLE_HIERARCHY["coorganizer"]) {
@@ -218,7 +217,7 @@ export function ManageAdministration({
   if (!canManage) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>You don't have permission to manage administration.</p>
+        <p>You don&apos;t have permission to manage administration.</p>
         <p className="text-sm mt-2">Only owners and organizers can manage roles.</p>
       </div>
     );

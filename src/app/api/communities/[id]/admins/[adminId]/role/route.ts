@@ -138,7 +138,7 @@ export async function PATCH(
     }
 
     const userRole = userAdminResult[0].role;
-    const userRoleLevel = ROLE_HIERARCHY[userRole] || 0;
+    // const userRoleLevel = ROLE_HIERARCHY[userRole] || 0;
     const targetRoleLevel = ROLE_HIERARCHY[role] || 0;
 
     // Permission checks

@@ -16,13 +16,10 @@ import { Home } from "lucide-react";
  * - Options to link/unlink accounts
  */
 export default function AccountSettingsPage() {
-  const [user, setUser] = useState<any>(null);
-  const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   // Track which accounts are already linked
   const [hasGoogle, setHasGoogle] = useState(false);
   const [hasMediaWiki, setHasMediaWiki] = useState(false);
-  const [hasPassword, setHasPassword] = useState(false);
 
   useEffect(() => {
     // Fetch linked accounts from API
@@ -36,8 +33,6 @@ export default function AccountSettingsPage() {
           const data = await response.json();
           setHasGoogle(data.hasGoogle || false);
           setHasMediaWiki(data.hasMediaWiki || false);
-          setHasPassword(data.hasPassword || false);
-          setAccounts(data.linkedAccounts || []);
         } else {
           console.error("Failed to fetch linked accounts");
         }
@@ -61,7 +56,7 @@ export default function AccountSettingsPage() {
           provider: "google",
           callbackURL: "/dashboard",
         });
-        
+
         if (result.data?.url) {
           window.location.href = result.data.url;
         } else if (result.error) {
@@ -155,7 +150,7 @@ export default function AccountSettingsPage() {
                   <span className="text-sm text-muted-foreground">✓ Linked</span>
                 </div>
               )}
-              
+
               {/* Only show "Link MediaWiki Account" button if MediaWiki is not already linked */}
               {!hasMediaWiki && (
                 <Button onClick={() => handleLinkAccount("mediawiki")} variant="outline">

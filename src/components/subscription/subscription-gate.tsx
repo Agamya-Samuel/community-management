@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import Link from "next/link";
 interface SubscriptionGateProps {
   feature: string;
   action: string;
+  gateType?: "payment" | "request";
 }
 
 /**
@@ -25,9 +26,11 @@ interface SubscriptionGateProps {
  * Shows a modal when user tries to access premium features without subscription
  * Used in community and event creation flows
  */
-export function SubscriptionGate({ feature, action }: SubscriptionGateProps) {
+export function SubscriptionGate({ feature, action, gateType = "payment" }: SubscriptionGateProps) {
   const [open, setOpen] = useState(true);
   const router = useRouter();
+
+  const isRequestMode = gateType === "request";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -35,11 +38,15 @@ export function SubscriptionGate({ feature, action }: SubscriptionGateProps) {
         <DialogHeader>
           <div className="flex items-center gap-2 mb-2">
             <Lock className="w-6 h-6 text-muted-foreground" />
-            <DialogTitle>Premium Subscription Required</DialogTitle>
+            <DialogTitle>
+              {isRequestMode ? "Access Request Required" : "Premium Subscription Required"}
+            </DialogTitle>
           </div>
           <DialogDescription>
-            {action} requires a Premium subscription. Upgrade to Premium to
-            unlock unlimited {feature} and advanced features.
+            {isRequestMode
+              ? `${action} requires approval. Please submit a request to unlock ${feature} and advanced features.`
+              : `${action} requires a Premium subscription. Upgrade to Premium to unlock unlimited ${feature} and advanced features.`
+            }
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
@@ -61,9 +68,9 @@ export function SubscriptionGate({ feature, action }: SubscriptionGateProps) {
             Go Back
           </Button>
           <Button asChild>
-            <Link href="/subscription/upgrade">
+            <Link href={isRequestMode ? "/subscription/request" : "/subscription/upgrade"}>
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade to Premium
+              {isRequestMode ? "Request Access" : "Upgrade to Premium"}
             </Link>
           </Button>
         </DialogFooter>

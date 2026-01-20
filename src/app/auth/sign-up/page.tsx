@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, Suspense } from "react"
 import { Globe } from "lucide-react"
 
-export default function SignUpPage() {
+function SignUpForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -19,6 +19,10 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [socialLoading, setSocialLoading] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Get callback URL from query params, default to complete-profile
+  const callbackUrl = searchParams.get("callbackUrl") || "/auth/complete-profile"
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,8 +53,12 @@ export default function SignUpPage() {
       if (result.error) {
         setError(result.error.message || "Failed to create account")
       } else {
-        // Redirect to profile completion or dashboard
-        router.push("/auth/complete-profile")
+        // Redirect to profile completion with original callback URL
+        if (callbackUrl !== "/auth/complete-profile") {
+          router.push(`/auth/complete-profile?redirect=${encodeURIComponent(callbackUrl)}`)
+        } else {
+          router.push("/auth/complete-profile")
+        }
       }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
@@ -65,18 +73,23 @@ export default function SignUpPage() {
 
     try {
       const { authClient } = await import("@/lib/auth/client")
-      
+
+      // Build callback URL with redirect parameter
+      const socialCallbackUrl = callbackUrl !== "/auth/complete-profile"
+        ? `/auth/complete-profile?redirect=${encodeURIComponent(callbackUrl)}`
+        : "/auth/complete-profile"
+
       // Google uses signIn.social (built-in provider)
       // MediaWiki uses signIn.oauth2 (generic OAuth provider)
       const result = provider === "google"
         ? await authClient.signIn.social({
-            provider,
-            callbackURL: "/auth/complete-profile",
-          })
+          provider,
+          callbackURL: socialCallbackUrl,
+        })
         : await authClient.signIn.oauth2({
-            providerId: provider,
-            callbackURL: "/auth/complete-profile",
-          })
+          providerId: provider,
+          callbackURL: socialCallbackUrl,
+        })
 
       // Both methods return { data, error }
       // If there's an error, it will be in result.error
@@ -218,7 +231,13 @@ export default function SignUpPage() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">Already have an account? </span>
-              <Link href="/auth/login" className="text-primary hover:text-primary/80 font-medium">
+              <Link
+                href={callbackUrl !== "/auth/complete-profile"
+                  ? `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/auth/login"
+                }
+                className="text-primary hover:text-primary/80 font-medium"
+              >
                 Sign in
               </Link>
             </div>
@@ -232,5 +251,18 @@ export default function SignUpPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// Default export with Suspense wrapper for useSearchParams
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   )
 }

@@ -60,6 +60,7 @@ export function BasicDetailsForm({ data, onChange }: BasicDetailsProps) {
   /**
    * Update form data and notify parent
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof BasicDetailsData, value: any) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);

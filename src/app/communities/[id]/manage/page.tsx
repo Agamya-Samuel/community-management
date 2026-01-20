@@ -6,7 +6,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, Users, ChevronDown } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ManageCommunityDropdown } from "@/components/communities/manage-community-dropdown";
 import { EditCommunitySettings } from "@/components/communities/edit-community-settings";
@@ -107,7 +107,7 @@ export default async function ManageCommunityPage({
             </div>
 
             {/* Manage Options Dropdown */}
-            <ManageCommunityDropdown 
+            <ManageCommunityDropdown
               communityId={communityId}
               activeSection={activeSection}
             />
@@ -122,21 +122,21 @@ export default async function ManageCommunityPage({
               {activeSection === "administration" && "Manage Administration"}
             </CardTitle>
             <CardDescription>
-              {activeSection === "settings" && 
+              {activeSection === "settings" &&
                 "Update your community's name, description, and photo."}
-              {activeSection === "administration" && 
+              {activeSection === "administration" &&
                 "Manage member roles and permissions. Promote or demote members to different administrative roles."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {activeSection === "settings" && (
-              <EditCommunitySettings 
+              <EditCommunitySettings
                 community={community}
                 userRole={userRole}
               />
             )}
             {activeSection === "administration" && (
-              <ManageAdministration 
+              <ManageAdministration
                 communityId={communityId}
                 userRole={userRole}
               />

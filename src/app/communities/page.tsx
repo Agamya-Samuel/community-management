@@ -1,9 +1,10 @@
 import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
+import Image from "next/image";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { desc } from "drizzle-orm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, ArrowLeft, ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +20,7 @@ import Link from "next/link";
  */
 export default async function BrowseCommunitiesPage() {
   // Get session (optional - browsing is public)
-  const session = await auth.api.getSession({
+  await auth.api.getSession({
     headers: await headers(),
   });
 
@@ -68,10 +69,10 @@ export default async function BrowseCommunitiesPage() {
               // Format creation date for display
               const createdAt = community.createdAt
                 ? new Date(community.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })
                 : "Unknown";
 
               return (
@@ -82,10 +83,12 @@ export default async function BrowseCommunitiesPage() {
                   {/* Community Image */}
                   {community.photo ? (
                     <div className="w-full h-48 relative overflow-hidden bg-muted">
-                      <img
+                      <Image
                         src={community.photo}
                         alt={community.name || "Community"}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                   ) : (

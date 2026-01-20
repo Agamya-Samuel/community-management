@@ -71,10 +71,10 @@ export function OnlineEventForm({ userId, communityId, eventId, initialData }: O
   // Store all form data
   // Initialize with initialData if provided (edit mode)
   const [formData, setFormData] = useState<Partial<OnlineEventFormData>>(initialData || {});
-  
+
   // Determine if we're in edit mode
   const isEditMode = !!eventId;
-  
+
   // Store navigation function from MultiPageForm
   // This allows ReviewForm to navigate to specific pages
   const [navigateToPage, setNavigateToPage] = useState<((pageIndex: number) => void) | null>(null);
@@ -157,7 +157,7 @@ export function OnlineEventForm({ userId, communityId, eventId, initialData }: O
       // Redirect to event page using the URL from API response
       // API returns community-scoped URL if event belongs to a community
       // In edit mode, use the existing eventId
-      const redirectUrl = isEditMode 
+      const redirectUrl = isEditMode
         ? (result.eventUrl || `/events/${eventId}`)
         : (result.eventUrl || `/events/${result.eventId}`);
       window.location.href = redirectUrl;
@@ -221,7 +221,6 @@ export function OnlineEventForm({ userId, communityId, eventId, initialData }: O
       component: (
         <ReviewForm
           data={formData}
-          onPublish={handlePublish}
           onNavigateToPage={navigateToPage || undefined}
         />
       ),

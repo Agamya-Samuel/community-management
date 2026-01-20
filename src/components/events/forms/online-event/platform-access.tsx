@@ -45,6 +45,7 @@ export function PlatformAccessForm({ data, onChange }: PlatformAccessFormProps) 
   /**
    * Update form data and notify parent
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof PlatformAccessData, value: any) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);

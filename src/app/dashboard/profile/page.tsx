@@ -7,16 +7,17 @@ import { eq } from "drizzle-orm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  User, 
-  Mail, 
-  Globe, 
-  Calendar, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  User,
+  Mail,
+  Globe,
+  Calendar,
+  CheckCircle2,
+  XCircle,
   Settings
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { fetchMediaWikiUsernameFromAPI } from "@/lib/auth/mediawiki-utils";
 import { isAdmin } from "@/lib/auth/admin-utils";
@@ -71,12 +72,12 @@ export default async function ProfilePage() {
   const userIsAdmin = await isAdmin(user.id);
 
   // Format dates
-  const createdAt = user.createdAt 
+  const createdAt = user.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "Unknown";
 
   return (
@@ -126,11 +127,15 @@ export default async function ProfilePage() {
               {/* Profile Picture and Name */}
               <div className="flex items-center gap-4">
                 {user.image ? (
-                  <img
-                    src={user.image}
-                    alt={user.name || "User"}
-                    className="w-20 h-20 rounded-full border-2 border-border"
-                  />
+                  <div className="relative w-20 h-20">
+                    <Image
+                      src={user.image}
+                      alt={user.name || "User"}
+                      fill
+                      className="rounded-full border-2 border-border object-cover"
+                      unoptimized
+                    />
+                  </div>
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground text-2xl font-bold">
                     {(user.name || user.email || "U")[0].toUpperCase()}
