@@ -4,25 +4,25 @@ import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { events, onlineEventMetadata, onsiteEventMetadata, eventTags, communityAdmins } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   ArrowLeft,
   Calendar,
   Clock,
   MapPin,
   Globe,
   Video,
-  Users,
   Tag,
   ExternalLink,
   Edit,
-  Share2
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { RegisterButton } from "@/components/events/register-button";
+import { ShareButton } from "@/components/events/share-button";
+import { ParticipantsList } from "@/components/events/participants-list";
 
 /**
  * Event Detail Page
@@ -82,7 +82,7 @@ export default async function EventDetailPage({
       .from(onlineEventMetadata)
       .where(eq(onlineEventMetadata.eventId, eventId))
       .limit(1);
-    
+
     if (onlineResult.length > 0) {
       onlineMetadata = onlineResult[0];
     }
@@ -94,7 +94,7 @@ export default async function EventDetailPage({
       .from(onsiteEventMetadata)
       .where(eq(onsiteEventMetadata.eventId, eventId))
       .limit(1);
-    
+
     if (onsiteResult.length > 0) {
       onsiteMetadata = onsiteResult[0];
     }
@@ -130,7 +130,7 @@ export default async function EventDetailPage({
           )
         )
         .limit(1);
-      
+
       if (adminResult.length > 0) {
         const userRole = adminResult[0].role;
         // Allow editing for owner, organizer, coorganizer, and event_organizer roles
@@ -315,10 +315,10 @@ export default async function EventDetailPage({
                         </Link>
                       </Button>
                     )}
-                    <Button variant="outline">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share
-                    </Button>
+                    <ShareButton
+                      title={event.title || "Event"}
+                      description={event.shortDescription || undefined}
+                    />
                   </div>
                 )}
               </div>
@@ -493,13 +493,21 @@ export default async function EventDetailPage({
                 <CardTitle>Registration</CardTitle>
               </CardHeader>
               <CardContent>
-                <RegisterButton 
+                <RegisterButton
                   eventId={eventId}
                   eventStatus={event.status}
                   className="w-full"
                 />
               </CardContent>
             </Card>
+
+            {/* Participants Section - Only visible to organizers */}
+            {canEditEvent && (
+              <ParticipantsList
+                eventId={eventId}
+                canManageParticipants={canEditEvent}
+              />
+            )}
           </div>
         </div>
       </div>

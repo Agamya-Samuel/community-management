@@ -5,45 +5,17 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Users, CreditCard, BarChart3, Zap, Globe, MessageSquare, Star, ArrowRight, Play } from "lucide-react"
 import Link from "next/link"
 
+import { Navbar } from "@/components/Navbar"
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground font-[family-name:var(--font-playfair)]">
-                EventFlow
-              </span>
-            </div>
-
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                Features
-              </a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                Pricing
-              </a>
-              <a href="#blog" className="text-muted-foreground hover:text-foreground transition-colors">
-                Blog
-              </a>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/auth/login">Login</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/auth/sign-up">Sign Up</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Navigation */}
+      <Navbar />
 
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
+      <section className="relative py-12 md:py-20 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-background"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-4xl mx-auto text-center">
@@ -77,7 +49,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Overview */}
-      <section id="features" className="py-20 bg-muted/30">
+      <section id="features" className="py-12 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 font-[family-name:var(--font-playfair)]">
@@ -88,7 +60,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -149,7 +121,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20">
+      <section className="py-12 md:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 font-[family-name:var(--font-playfair)]">
@@ -160,7 +132,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
                 <Calendar className="w-8 h-8 text-primary-foreground" />
@@ -205,7 +177,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-12 md:py-20 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 font-[family-name:var(--font-playfair)]">
@@ -213,7 +185,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center mb-4">
@@ -222,8 +194,8 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  "EventFlow transformed how we manage our annual conference. The networking features alone increased
-                  attendee satisfaction by 40%."
+                  &quot;EventFlow transformed how we manage our annual conference. The networking features alone increased
+                  attendee satisfaction by 40%.&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
@@ -245,8 +217,8 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  "The analytics dashboard gives us insights we never had before. We've improved our ROI by 60% using
-                  EventFlow's data."
+                  &quot;The analytics dashboard gives us insights we never had before. We&apos;ve improved our ROI by 60% using
+                  EventFlow&apos;s data.&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
@@ -268,8 +240,8 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-muted-foreground mb-4">
-                  "Setup was incredibly easy, and our attendees love the mobile app. EventFlow made our virtual
-                  conference feel truly engaging."
+                  &quot;Setup was incredibly easy, and our attendees love the mobile app. EventFlow made our virtual
+                  conference feel truly engaging.&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center mr-3">
@@ -308,7 +280,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20">
+      <section className="py-12 md:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="p-12 text-center">
@@ -333,7 +305,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-muted/30 py-12 border-t border-border">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">

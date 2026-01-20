@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json();
-    const { userId, eventType, data, status } = body;
+    const { userId, eventType, status } = body;
 
     // Validate user ID matches session
     if (userId !== session.user.id) {

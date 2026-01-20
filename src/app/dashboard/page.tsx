@@ -4,20 +4,21 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
+import {
+  Users,
   Settings,
   Plus,
   ExternalLink,
   Calendar
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion";
-import { hasActiveSubscription } from "@/lib/subscription/utils";
+import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
 import { Crown } from "lucide-react";
 
 /**
@@ -44,17 +45,24 @@ export default async function DashboardPage() {
   // Check subscription status
   const hasSubscription = await hasActiveSubscription(user.id);
 
+  // Fetch full user data to check emailSkippedAt
+  const fullUser = await db.query.users.findFirst({
+    where: eq(schema.users.id, user.id),
+  });
+
   // CRITICAL: Check if user has temporary MediaWiki email
   // If email matches pattern mediawiki-*@temp.eventflow.local, redirect to complete profile
-  if (user.email && user.email.includes('@temp.eventflow.local')) {
+  // BUT only if they haven't skipped the prompt before
+  if (user.email && user.email.includes('@temp.eventflow.local') && !fullUser?.emailSkippedAt) {
     console.log("User with temporary email detected, redirecting to complete profile:", user.email);
     redirect("/auth/complete-profile");
   }
 
   // Check if user should complete profile first
   // This checks for MediaWiki users without email and other profile completion requirements
+  // Skip if user has already skipped the email prompt
   const needsProfileCompletion = await shouldRedirectToCompletion(user.id);
-  if (needsProfileCompletion) {
+  if (needsProfileCompletion && !fullUser?.emailSkippedAt) {
     console.log("User needs to complete profile, redirecting to profile completion page");
     redirect("/auth/complete-profile");
   }
@@ -122,9 +130,9 @@ export default async function DashboardPage() {
               </Button>
             ) : (
               <Button asChild>
-                <Link href="/subscription/upgrade">
+                <Link href={getSubscriptionGateType(!!user.mediawikiUsername) === "request" ? "/subscription/request" : "/subscription/upgrade"}>
                   <Crown className="w-4 h-4 mr-2" />
-                  Upgrade to Premium
+                  {getSubscriptionGateType(!!user.mediawikiUsername) === "request" ? "Request Access" : "Upgrade to Premium"}
                 </Link>
               </Button>
             )}
@@ -159,7 +167,7 @@ export default async function DashboardPage() {
               {userCommunities.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">You haven't joined any communities yet</p>
+                  <p className="text-muted-foreground mb-2">You haven&apos;t joined any communities yet</p>
                   <p className="text-sm text-muted-foreground mb-4">
                     Browse existing communities or create your own to start organizing events
                   </p>
@@ -188,52 +196,54 @@ export default async function DashboardPage() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {userCommunities.map((item) => (
-                    <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
-                      {/* Community Image */}
-                      {item.community?.photo ? (
-                        <div className="w-full h-48 relative overflow-hidden bg-muted">
-                          <img
-                            src={item.community.photo}
-                            alt={item.community.name || "Community"}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                          <Users className="w-16 h-16 text-muted-foreground" />
-                        </div>
-                      )}
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-foreground">
-                            {item.community?.name || "Community"}
-                          </h3>
-                          <Badge variant={item.role ? "secondary" : "outline"}>
-                            {item.role || "Member"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {item.community?.description || "No description"}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link href={`/communities/${item.communityId}`}>
-                              View
-                              <ExternalLink className="w-3 h-3 ml-1" />
-                            </Link>
-                          </Button>
-                          {item.role && (
-                            <Button variant="outline" size="sm" asChild>
-                              <Link href={`/communities/${item.communityId}/manage`}>
-                                Manage
+                    {userCommunities.map((item) => (
+                      <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                        {/* Community Image */}
+                        {item.community?.photo ? (
+                          <div className="w-full h-48 relative overflow-hidden bg-muted">
+                            <Image
+                              src={item.community.photo}
+                              alt={item.community.name || "Community"}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                            <Users className="w-16 h-16 text-muted-foreground" />
+                          </div>
+                        )}
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="font-semibold text-foreground">
+                              {item.community?.name || "Community"}
+                            </h3>
+                            <Badge variant={item.role ? "secondary" : "outline"}>
+                              {item.role || "Member"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                            {item.community?.description || "No description"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="flex-1" asChild>
+                              <Link href={`/communities/${item.communityId}`}>
+                                View
+                                <ExternalLink className="w-3 h-3 ml-1" />
                               </Link>
                             </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                            {item.role && (
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/communities/${item.communityId}/manage`}>
+                                  Manage
+                                </Link>
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 </>
               )}
@@ -254,7 +264,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="text-center py-12">
                 <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground mb-2">You haven't joined any events yet</p>
+                <p className="text-muted-foreground mb-2">You haven&apos;t joined any events yet</p>
                 <p className="text-sm text-muted-foreground mb-4">
                   Browse existing events to discover and join exciting activities
                 </p>

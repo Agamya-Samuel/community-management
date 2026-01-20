@@ -105,7 +105,7 @@ export function HackathonEventForm({ userId, communityId, eventId, initialData }
   // Store all form data
   // Initialize with initialData if provided (edit mode)
   const [formData, setFormData] = useState<Partial<HackathonEventFormData>>(initialData || {});
-  
+
   // Determine if we're in edit mode
   const isEditMode = !!eventId;
 
@@ -185,7 +185,7 @@ export function HackathonEventForm({ userId, communityId, eventId, initialData }
       const result = await response.json();
       // Redirect to event page using the URL from API response
       // In edit mode, use the existing eventId
-      const redirectUrl = isEditMode 
+      const redirectUrl = isEditMode
         ? (result.eventUrl || `/events/${eventId}`)
         : (result.eventUrl || `/events/${result.eventId}`);
       window.location.href = redirectUrl;
@@ -239,7 +239,6 @@ export function HackathonEventForm({ userId, communityId, eventId, initialData }
       component: (
         <ReviewForm
           data={formData}
-          onPublish={handlePublish}
         />
       ),
     },

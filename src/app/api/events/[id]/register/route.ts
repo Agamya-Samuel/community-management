@@ -98,7 +98,7 @@ export async function POST(
     // Check if registration is confirmed (not cancelled)
     if (existingRegistration.length > 0) {
       const registration = existingRegistration[0];
-      
+
       // If registration exists and is not cancelled, user is already registered
       if (registration.status === "confirmed") {
         return NextResponse.json(
@@ -106,7 +106,7 @@ export async function POST(
           { status: 400 }
         );
       }
-      
+
       // If registration was cancelled, we can allow re-registration
       // For now, we'll prevent it. In the future, you might want to allow re-registration
       if (registration.status === "cancelled") {
@@ -231,8 +231,27 @@ export async function GET(
       )
       .limit(1);
 
+    // Also check if user was removed (cancelled by organizer)
+    let wasRemoved = false;
+    if (registration.length === 0) {
+      const cancelledRegistration = await db
+        .select()
+        .from(eventRegistrations)
+        .where(
+          and(
+            eq(eventRegistrations.eventId, eventId),
+            eq(eventRegistrations.userId, userId),
+            eq(eventRegistrations.status, "cancelled")
+          )
+        )
+        .limit(1);
+
+      wasRemoved = cancelledRegistration.length > 0;
+    }
+
     return NextResponse.json({
       registered: registration.length > 0,
+      wasRemoved,
       registration: registration.length > 0 ? registration[0] : null,
     });
   } catch (error) {

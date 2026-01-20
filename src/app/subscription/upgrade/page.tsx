@@ -37,6 +37,13 @@ export default async function UpgradeSubscriptionPage() {
     redirect("/subscription/manage");
   }
 
+  // CRITICAL: If IS_MEDIA_WIKI is true, redirect EVERYONE to request page
+  // Payment page should NEVER be shown when this flag is enabled
+  const isGlobalMediaWikiMode = process.env.IS_MEDIA_WIKI === "true" || process.env.IS_MEDIAWIKI === "true";
+  if (isGlobalMediaWikiMode) {
+    redirect("/subscription/request");
+  }
+
   // Check if user is a Wikimedia user (should use request flow instead)
   const userAccounts = await db
     .select()

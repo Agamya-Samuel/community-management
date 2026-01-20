@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/config";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Unlink account API route
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get session to verify user is authenticated
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.json(
         { error: "Unauthorized" },

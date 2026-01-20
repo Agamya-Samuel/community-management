@@ -10,6 +10,7 @@ CREATE TABLE `users` (
 	`timezone` varchar(100) DEFAULT 'UTC',
 	`password` varchar(255),
 	`bio` text,
+	`email_skipped_at` timestamp,
 	`role` varchar(50) NOT NULL DEFAULT 'user',
 	`user_type` varchar(50) NOT NULL DEFAULT 'registered_user',
 	`subscription_id` varchar(255),

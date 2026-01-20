@@ -1,11 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+// import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+
+/**
+ * Date & Time Form for Online Events
+ * 
+ * Page 2 of Online Event creation
+ * Based on PRD: Online Event Creation - Page 2
+ */
+//   value: any;
+//   onChange: (data: DateTimeData) => void;
+// }
+
+// Removed unused imports
 
 /**
  * Date & Time Form for Online Events
@@ -54,6 +66,7 @@ export function DateTimeForm({ data, onChange }: DateTimeFormProps) {
   /**
    * Update form data and notify parent
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateField = (field: keyof DateTimeData, value: any) => {
     const updated = { ...formData, [field]: value };
     setFormData(updated);
@@ -122,9 +135,14 @@ export function DateTimeForm({ data, onChange }: DateTimeFormProps) {
   };
 
   // Calculate minimum datetime (2 hours from now) for start datetime
-  const minStartDateTime = new Date(Date.now() + 2 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+  const [minStartDateTime, setMinStartDateTime] = useState("");
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMinStartDateTime(
+      new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16)
+    );
+  }, []);
 
   // Calculate minimum datetime for end datetime (start datetime if available)
   const minEndDateTime = formData.startDate && formData.startTime

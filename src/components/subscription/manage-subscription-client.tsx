@@ -18,7 +18,6 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface ManageSubscriptionClientProps {
-  subscriptionId: string;
   autoRenew: boolean;
 }
 
@@ -26,7 +25,6 @@ interface ManageSubscriptionClientProps {
  * Client component for managing subscription (cancellation)
  */
 export function ManageSubscriptionClient({
-  subscriptionId,
   autoRenew,
 }: ManageSubscriptionClientProps) {
   const [loading, setLoading] = useState(false);
@@ -61,7 +59,7 @@ export function ManageSubscriptionClient({
     return (
       <div className="text-center py-4">
         <p className="text-sm text-muted-foreground">
-          Your subscription is set to not renew. You'll retain access until the
+          Your subscription is set to not renew. You&apos;ll retain access until the
           end of your billing period.
         </p>
       </div>
@@ -86,9 +84,9 @@ export function ManageSubscriptionClient({
         <AlertDialogHeader>
           <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to cancel your subscription? You'll retain
+            Are you sure you want to cancel your subscription? You&apos;ll retain
             access to all Premium features until the end of your current billing
-            period. After that, your subscription will not renew and you'll lose
+            period. After that, your subscription will not renew and you&apos;ll lose
             access to Premium features.
           </AlertDialogDescription>
         </AlertDialogHeader>

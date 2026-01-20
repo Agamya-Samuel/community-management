@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 interface UpgradeSubscriptionFormProps {
@@ -19,7 +18,6 @@ export function UpgradeSubscriptionForm({
   planType,
 }: UpgradeSubscriptionFormProps) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleUpgrade = async () => {
     setLoading(true);

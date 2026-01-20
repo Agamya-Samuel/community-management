@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, CheckCircle2, Users, ImageIcon, X } from "lucide-react";
+import { Loader2, Users, ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -56,10 +57,10 @@ type CommunityFormValues = z.infer<typeof communitySchema>;
  * @param parentCommunityId - Optional parent community ID. If provided, creates a child community.
  *                            If null/undefined, creates a parent community.
  */
-export function CreateCommunityForm({ 
-  parentCommunityId 
-}: { 
-  parentCommunityId?: number | null 
+export function CreateCommunityForm({
+  parentCommunityId
+}: {
+  parentCommunityId?: number | null
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,30 +79,40 @@ export function CreateCommunityForm({
 
   // Watch the photo field to show preview when URL changes
   const photoUrl = form.watch("photo");
+  const [debouncedPhotoUrl, setDebouncedPhotoUrl] = useState<string | undefined>(photoUrl);
 
-  // Update image preview when photo URL changes
+  // Debounce photo URL updates
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedPhotoUrl(photoUrl);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [photoUrl]);
+
+  // Update image preview when debounced photo URL changes
   useEffect(() => {
     // Reset preview state when URL changes
     setImageError(false);
     setImageLoading(false);
-    
+
     // If URL is empty or invalid, clear preview
-    if (!photoUrl || photoUrl.trim() === "") {
+    if (!debouncedPhotoUrl || debouncedPhotoUrl.trim() === "") {
       setImagePreview(null);
       return;
     }
 
     // Validate URL format
     try {
-      new URL(photoUrl);
+      new URL(debouncedPhotoUrl);
       // URL is valid, show preview
-      setImagePreview(photoUrl);
+      setImagePreview(debouncedPhotoUrl);
       setImageLoading(true);
     } catch {
       // Invalid URL, clear preview
       setImagePreview(null);
     }
-  }, [photoUrl]);
+  }, [debouncedPhotoUrl]);
 
   const onSubmit = async (data: CommunityFormValues) => {
     setIsSubmitting(true);
@@ -133,7 +144,7 @@ export function CreateCommunityForm({
 
       // Success - show success message and redirect
       toast.success("Community created successfully!");
-      
+
       // Redirect to the community page or dashboard
       // TODO: Update this when community detail pages are implemented
       router.push("/dashboard");
@@ -211,7 +222,7 @@ export function CreateCommunityForm({
                     {...field}
                     disabled={isSubmitting}
                   />
-                  
+
                   {/* Image Preview */}
                   {imagePreview && (
                     <div className="relative w-full">
@@ -221,23 +232,26 @@ export function CreateCommunityForm({
                             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                           </div>
                         )}
-                        <img
-                          src={imagePreview}
-                          alt="Community photo preview"
-                          className={cn(
-                            "w-full h-auto max-h-64 object-contain",
-                            imageLoading && "hidden",
-                            imageError && "hidden"
-                          )}
-                          onLoad={() => {
-                            setImageLoading(false);
-                            setImageError(false);
-                          }}
-                          onError={() => {
-                            setImageLoading(false);
-                            setImageError(true);
-                          }}
-                        />
+                        <div className="relative w-full h-64">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={imagePreview}
+                            alt="Community photo preview"
+                            className={cn(
+                              "w-full h-full object-contain",
+                              imageLoading && "hidden",
+                              imageError && "hidden"
+                            )}
+                            onLoad={() => {
+                              setImageLoading(false);
+                              setImageError(false);
+                            }}
+                            onError={() => {
+                              setImageLoading(false);
+                              setImageError(true);
+                            }}
+                          />
+                        </div>
                         {imageError && (
                           <div className="flex flex-col items-center justify-center h-48 bg-muted text-muted-foreground">
                             <ImageIcon className="w-8 h-8 mb-2 opacity-50" />

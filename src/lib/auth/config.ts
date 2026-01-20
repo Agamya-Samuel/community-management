@@ -21,7 +21,7 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
 
 // Enhanced MediaWiki OAuth validation
 const MEDIAWIKI_CONFIG_VALID = Boolean(
-  process.env.MEDIAWIKI_CLIENT_ID && 
+  process.env.MEDIAWIKI_CLIENT_ID &&
   process.env.MEDIAWIKI_CLIENT_SECRET
 );
 
@@ -77,10 +77,10 @@ export const auth = betterAuth({
   // For Google OAuth, the callback URL will be: {baseURL}/api/auth/callback/google
   // Make sure this URL is added to Google Cloud Console authorized redirect URIs
   baseURL: process.env.BETTER_AUTH_URL || process.env.AUTH_URL || "http://localhost:3000",
-  
+
   // Secret key for signing tokens (required)
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || "",
-  
+
   // User configuration with custom additional fields
   user: {
     // Additional fields beyond better-auth defaults
@@ -138,7 +138,7 @@ export const auth = betterAuth({
   // Email verification configuration
   emailVerification: {
     // Function to send verification emails
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({ user, url }) => {
       if (!resend) {
         console.error("Resend API key not configured. Cannot send verification email.");
         return;
@@ -205,7 +205,7 @@ export const auth = betterAuth({
           // Note: These URLs depend on the MediaWiki instance
           // For Wikimedia (Wikipedia), use: https://meta.wikimedia.org/w/rest.php/oauth2
           // For custom MediaWiki instances, adjust the base URL
-          authorizationUrl: process.env.MEDIAWIKI_BASE_URL 
+          authorizationUrl: process.env.MEDIAWIKI_BASE_URL
             ? `${process.env.MEDIAWIKI_BASE_URL}/w/rest.php/oauth2/authorize`
             : "https://meta.wikimedia.org/w/rest.php/oauth2/authorize",
           tokenUrl: process.env.MEDIAWIKI_BASE_URL
@@ -246,7 +246,7 @@ export const auth = betterAuth({
               const profileUrl = process.env.MEDIAWIKI_BASE_URL
                 ? `${process.env.MEDIAWIKI_BASE_URL}/w/rest.php/oauth2/resource/profile`
                 : "https://meta.wikimedia.org/w/rest.php/oauth2/resource/profile";
-              
+
               const response = await fetch(profileUrl, {
                 method: "GET",
                 headers: {
@@ -270,7 +270,7 @@ export const auth = betterAuth({
 
               const data = await response.json();
               console.log("MediaWiki OAuth profile data:", JSON.stringify(data, null, 2));
-              
+
               // FIXED: Validate required fields
               if (!data.sub) {
                 throw new Error("MediaWiki OAuth response missing 'sub' (user ID)");
@@ -282,7 +282,7 @@ export const auth = betterAuth({
               // FIXED: Use 'sub' as the unique account identifier (per OIDC/OAuth 2.0 spec)
               // The 'sub' is the central user ID and is the proper unique identifier
               // We'll store the username separately in our custom user fields
-              
+
               // CRITICAL FIX: For account linking, DO NOT use MediaWiki email
               // Only fetch username from MediaWiki, keep existing Google email
               // 
@@ -296,10 +296,10 @@ export const auth = betterAuth({
               // This allows us to extract the username later in the hook
               const userEmail = `mediawiki-${data.username}@temp.eventflow.local`;
               const needsEmailUpdate = true; // Always flag as needing update since we use placeholder
-              
+
               console.log(`MediaWiki OAuth: ONLY fetching username (${data.username}), ignoring email`);
               console.log(`MediaWiki email: Using placeholder (${userEmail}) - will be replaced with existing email during account linking`);
-              
+
               return {
                 id: data.sub, // FIXED: Use sub (central user ID) as account identifier
                 email: userEmail, // Placeholder email - hook will restore original email for account linking
@@ -335,7 +335,7 @@ export const auth = betterAuth({
       create: {
         // After account is created, sync better-auth fields to our custom fields
         // AND handle MediaWiki username extraction and storage
-        after: async (account, ctx) => {
+        after: async (account) => {
           try {
             // Sync accountId → providerAccountId and providerId → provider
             // for backward compatibility with our custom logic
@@ -359,7 +359,7 @@ export const auth = betterAuth({
 
               // Wait a moment for transaction to complete
               await new Promise(resolve => setTimeout(resolve, 100));
-              
+
               // Fetch the user to check if this is account linking
               const user = await db.query.users.findFirst({
                 where: eq(schema.users.id, account.userId),
@@ -374,17 +374,17 @@ export const auth = betterAuth({
               // If so, we MUST preserve the original email and restore it immediately
               const isAccountLinking = user.email && !user.email.includes('@temp.eventflow.local');
               let originalEmail: string | null = null;
-              
+
               if (isAccountLinking) {
                 // This is account linking - store the original email
                 originalEmail = user.email;
                 console.log("Account linking detected - original email to preserve:", originalEmail);
               }
-              
+
               // Extract username from placeholder email format: mediawiki-{username}@temp.eventflow.local
               // This is how we encoded the username in getUserInfo
               let username: string | undefined;
-              
+
               // Check if user email is a placeholder (contains the username)
               if (user.email && user.email.includes('@temp.eventflow.local')) {
                 const match = user.email.match(/^mediawiki-(.+)@temp\.eventflow\.local$/);
@@ -392,7 +392,7 @@ export const auth = betterAuth({
                   username = match[1];
                 }
               }
-              
+
               // Fallback: Use name field (which Better-Auth sets from OAuth)
               // For MediaWiki, name is typically the username if realname is not provided
               if (!username && user.name) {
@@ -401,13 +401,14 @@ export const auth = betterAuth({
 
               if (username) {
                 console.log("Updating user with MediaWiki username:", username);
-                
+
                 // Prepare update data
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const updateData: any = {
                   mediawikiUsername: username,
                   mediawikiUsernameVerifiedAt: new Date(),
                 };
-                
+
                 // CRITICAL: If this is account linking, ALWAYS restore the original email
                 // This ensures the existing Google email is preserved and no email mismatch occurs
                 if (isAccountLinking && originalEmail) {
@@ -420,11 +421,11 @@ export const auth = betterAuth({
                     updateData.emailVerified = user.emailVerified || true;
                   }
                 }
-                
+
                 await db.update(schema.users)
                   .set(updateData)
                   .where(eq(schema.users.id, account.userId));
-                  
+
                 console.log("MediaWiki account linking complete - username stored, email preserved");
               } else {
                 console.warn("MediaWiki username not found - user.name:", user.name, "user.email:", user.email);
@@ -448,7 +449,7 @@ export const auth = betterAuth({
               console.log("MediaWiki user with temporary email created, needs profile completion:", user.email);
               // The redirect will be handled by checking this in middleware/session
             }
-            
+
             // Handle Google OAuth: Set emailVerifiedAt when user signs in with Google
             // Check if this is from Google OAuth callback
             if (ctx && ctx.path?.includes("callback") && user.email) {
@@ -462,7 +463,7 @@ export const auth = betterAuth({
                       eq(schema.accounts.provider, "google")
                     ),
                   });
-                  
+
                   if (account) {
                     await db.update(schema.users)
                       .set({
@@ -476,7 +477,7 @@ export const auth = betterAuth({
                 }
               }, 100);
             }
-            
+
             // FIXED: Handle MediaWiki OAuth for NEW users
             // For existing users linking MediaWiki, the account.create hook handles it
             // This only runs for NEW user creation via MediaWiki OAuth
@@ -491,12 +492,12 @@ export const auth = betterAuth({
                       eq(schema.accounts.provider, "mediawiki")
                     ),
                   });
-                  
+
                   if (account) {
                     // Extract username from account or user data
                     // The username should be in the user's name field for new users
                     const mediawikiUsername = user.name;
-                    
+
                     if (mediawikiUsername) {
                       await db.update(schema.users)
                         .set({

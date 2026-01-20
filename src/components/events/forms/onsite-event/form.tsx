@@ -78,7 +78,7 @@ export function OnsiteEventForm({ userId, communityId, eventId, initialData }: O
   // Store all form data
   // Initialize with initialData if provided (edit mode)
   const [formData, setFormData] = useState<Partial<OnsiteEventFormData>>(initialData || {});
-  
+
   // Determine if we're in edit mode
   const isEditMode = !!eventId;
 
@@ -158,7 +158,7 @@ export function OnsiteEventForm({ userId, communityId, eventId, initialData }: O
       const result = await response.json();
       // Redirect to event page using the URL from API response
       // In edit mode, use the existing eventId
-      const redirectUrl = isEditMode 
+      const redirectUrl = isEditMode
         ? (result.eventUrl || `/events/${eventId}`)
         : (result.eventUrl || `/events/${result.eventId}`);
       window.location.href = redirectUrl;
@@ -212,7 +212,6 @@ export function OnsiteEventForm({ userId, communityId, eventId, initialData }: O
       component: (
         <ReviewForm
           data={formData}
-          onPublish={handlePublish}
         />
       ),
     },

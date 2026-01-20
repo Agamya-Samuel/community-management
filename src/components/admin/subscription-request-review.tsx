@@ -12,7 +12,9 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 interface SubscriptionRequestReviewProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   request: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user: any;
 }
 
@@ -39,7 +41,7 @@ export function SubscriptionRequestReview({ request, user }: SubscriptionRequest
     try {
       const url = `/api/admin/subscription-requests/${encodeURIComponent(request.requestId)}`;
       console.log("Reviewing request:", { url, requestId: request.requestId, action });
-      
+
       const response = await fetch(url, {
         method: "POST",
         headers: {

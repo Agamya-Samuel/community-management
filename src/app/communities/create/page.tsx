@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { hasActiveSubscription } from "@/lib/subscription/utils";
+import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
 import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { CreateCommunityForm } from "@/components/communities/create-community-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,13 +40,15 @@ export default async function CreateCommunityPage({
   // Approved users get an active subscription with status "active" and valid endDate
   const hasSubscription = await hasActiveSubscription(user.id);
 
-  // If no subscription, show subscription gate
-  // This prevents non-premium users from creating communities
+  // If no subscription, show subscription gate with appropriate mode
   if (!hasSubscription) {
+    const gateType = getSubscriptionGateType(!!user.mediawikiUsername);
+
     return (
       <SubscriptionGate
         feature="communities"
         action="Creating communities"
+        gateType={gateType}
       />
     );
   }
@@ -55,8 +57,8 @@ export default async function CreateCommunityPage({
   // If parentId exists, we're creating a child community
   // If not, we're creating a parent community (parent_community_id = NULL)
   const resolvedSearchParams = await Promise.resolve(searchParams);
-  const parentId = resolvedSearchParams.parentId 
-    ? parseInt(resolvedSearchParams.parentId, 10) 
+  const parentId = resolvedSearchParams.parentId
+    ? parseInt(resolvedSearchParams.parentId, 10)
     : null;
 
   // Determine if this is a parent or child community

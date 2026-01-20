@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "8e643d3f-71d3-4305-ace5-91d828937464",
+  "id": "c33906f1-7ee8-4192-8dee-359421b9b6eb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "users": {
@@ -82,6 +82,13 @@
         "bio": {
           "name": "bio",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "email_skipped_at": {
+          "name": "email_skipped_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

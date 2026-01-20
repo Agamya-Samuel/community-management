@@ -11,8 +11,15 @@ import { useRouter } from "next/navigation";
  * Profile completion form component
  * 
  * Handles the UI for completing user profile after initial login
+ * Accepts optional redirectUrl to redirect to after completion
  */
-export function CompleteProfileForm({ user }: { user: any }) {
+interface CompleteProfileFormProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  user: any;
+  redirectUrl?: string;
+}
+
+export function CompleteProfileForm({ user, redirectUrl = "/dashboard" }: CompleteProfileFormProps) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -20,7 +27,7 @@ export function CompleteProfileForm({ user }: { user: any }) {
   const handleAddEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const response = await fetch("/api/auth/add-email", {
         method: "POST",
@@ -55,7 +62,7 @@ export function CompleteProfileForm({ user }: { user: any }) {
           <CardHeader>
             <CardTitle>Complete Your Profile</CardTitle>
             <CardDescription>
-              {hasTemporaryEmail 
+              {hasTemporaryEmail
                 ? "Add your email address to receive notifications and enable account recovery"
                 : "Welcome! Let's set up your profile to get started"}
             </CardDescription>
@@ -81,7 +88,11 @@ export function CompleteProfileForm({ user }: { user: any }) {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push("/dashboard")}
+                  onClick={async () => {
+                    // Record that user skipped the email prompt
+                    await fetch("/api/auth/skip-email", { method: "POST" });
+                    router.push(redirectUrl);
+                  }}
                 >
                   Skip for now
                 </Button>
@@ -91,11 +102,11 @@ export function CompleteProfileForm({ user }: { user: any }) {
                 <p className="text-sm text-muted-foreground">
                   Your profile looks good! You can continue to the dashboard or complete additional details later.
                 </p>
-                <Button 
-                  className="w-full" 
-                  onClick={() => router.push("/dashboard")}
+                <Button
+                  className="w-full"
+                  onClick={() => router.push(redirectUrl)}
                 >
-                  Continue to Dashboard
+                  Continue
                 </Button>
                 <Button
                   variant="outline"

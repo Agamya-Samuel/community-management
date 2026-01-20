@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
-import { hasActiveSubscription } from "@/lib/subscription/utils";
+import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
 import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { OnlineEventForm } from "@/components/events/forms/online-event/form";
 import { db } from "@/db";
@@ -64,10 +64,13 @@ export default async function CreateEventTypePage({
 
   // If no subscription, show subscription gate
   if (!hasSubscription) {
+    const gateType = getSubscriptionGateType(!!user.mediawikiUsername);
+
     return (
       <SubscriptionGate
         feature="events"
         action="Creating events"
+        gateType={gateType}
       />
     );
   }

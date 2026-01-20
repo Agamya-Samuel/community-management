@@ -15,8 +15,7 @@ import { eq } from "drizzle-orm";
  * which Better-Auth stores in different places depending on the flow
  */
 export async function extractMediaWikiUsername(
-  userId: string,
-  accountId?: string
+  userId: string
 ): Promise<string | null> {
   try {
     // First, check if the user already has a MediaWiki username
@@ -200,7 +199,7 @@ export async function fetchMediaWikiUsernameFromAPI(
     }
 
     const data = await response.json();
-    
+
     if (!data.username) {
       console.warn("MediaWiki API response missing username field");
       return null;

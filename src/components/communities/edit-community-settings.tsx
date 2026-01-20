@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,7 +96,7 @@ export function EditCommunitySettings({
   if (!canEdit) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>You don't have permission to edit community settings.</p>
+        <p>You don&apos;t have permission to edit community settings.</p>
         <p className="text-sm mt-2">Only owners and organizers can edit settings.</p>
       </div>
     );
@@ -144,7 +145,7 @@ export function EditCommunitySettings({
           placeholder="https://example.com/photo.jpg"
         />
         <p className="text-xs text-muted-foreground">
-          URL to the community's photo or logo
+          URL to the community&apos;s photo or logo
         </p>
       </div>
 
@@ -153,13 +154,15 @@ export function EditCommunitySettings({
         <div className="space-y-2">
           <Label>Photo Preview</Label>
           <div className="w-full h-48 relative border rounded-md overflow-hidden bg-muted">
-            <img
+            <Image
               src={formData.photo}
               alt="Community photo preview"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Hide image on error
-                e.currentTarget.style.display = "none";
+              fill
+              className="object-cover"
+              unoptimized
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
               }}
             />
           </div>

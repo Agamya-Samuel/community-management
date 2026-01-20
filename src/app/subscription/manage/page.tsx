@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Crown, Calendar, CreditCard, X } from "lucide-react";
+import { ArrowLeft, Crown, Calendar, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { getUserSubscription } from "@/lib/subscription/utils";
 import { ManageSubscriptionClient } from "@/components/subscription/manage-subscription-client";
@@ -30,26 +30,27 @@ export default async function ManageSubscriptionPage() {
   // Get user's subscription
   const subscription = await getUserSubscription(user.id);
 
-  // If no subscription, redirect to upgrade
+  // If no subscription, redirect to appropriate page based on mode
   if (!subscription) {
-    redirect("/subscription/upgrade");
+    const isGlobalMediaWikiMode = process.env.IS_MEDIA_WIKI === "true" || process.env.IS_MEDIAWIKI === "true";
+    redirect(isGlobalMediaWikiMode ? "/subscription/request" : "/subscription/upgrade");
   }
 
   // Format dates
   const startDate = subscription.startDate
     ? new Date(subscription.startDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "N/A";
 
   const endDate = subscription.endDate
     ? new Date(subscription.endDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : null;
 
   const isComplimentary = subscription.planType === "wikimedia_complimentary";
@@ -111,8 +112,8 @@ export default async function ManageSubscriptionPage() {
                     {isComplimentary
                       ? "Wikimedia Complimentary"
                       : subscription.planType === "monthly"
-                      ? "Monthly Plan"
-                      : "Annual Plan"}
+                        ? "Monthly Plan"
+                        : "Annual Plan"}
                   </p>
                 </div>
                 <div>
@@ -183,7 +184,6 @@ export default async function ManageSubscriptionPage() {
             </CardHeader>
             <CardContent>
               <ManageSubscriptionClient
-                subscriptionId={subscription.subscriptionId}
                 autoRenew={subscription.autoRenew}
               />
             </CardContent>
