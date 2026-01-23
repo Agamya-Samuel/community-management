@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut, LayoutDashboard } from "lucide-react"
+import { User, Settings, LogOut, LayoutDashboard, Shield } from "lucide-react"
 
 export function UserAvatar() {
   const [user, setUser] = useState<{ name?: string | null; email?: string | null; image?: string | null } | null>(null)
@@ -93,6 +93,12 @@ export function UserAvatar() {
           <Link href="/dashboard" className="cursor-pointer">
             <LayoutDashboard className="mr-2 h-4 w-4" />
             Dashboard
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/organizer/dashboard" className="cursor-pointer">
+            <Shield className="mr-2 h-4 w-4" />
+            Organizer dashboard
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
