@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Users,
   Settings,
-  Plus,
   ExternalLink,
   Calendar
 } from "lucide-react";
@@ -174,7 +173,7 @@ export default async function DashboardPage() {
                 Community
               </CardTitle>
               <CardDescription>
-                Browse existing communities or create your own
+                Browse existing communities and join events
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -183,18 +182,12 @@ export default async function DashboardPage() {
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground mb-2">You haven&apos;t joined any communities yet</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Browse existing communities or create your own to start organizing events
+                    Browse existing communities to discover and join exciting events
                   </p>
                   <div className="flex items-center justify-center gap-3">
                     <Button variant="outline" asChild>
                       <Link href="/communities">
                         Browse Communities
-                      </Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/communities/create">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create My Community
                       </Link>
                     </Button>
                   </div>
