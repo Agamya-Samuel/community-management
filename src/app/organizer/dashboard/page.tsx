@@ -140,12 +140,6 @@ export default async function OrganizerDashboardPage() {
                 </Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="/events/create">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create event
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
                 <Link href="/communities">Browse communities</Link>
               </Button>
               <Button variant="outline" asChild>
@@ -250,12 +244,9 @@ export default async function OrganizerDashboardPage() {
                 <div className="text-center py-10">
                   <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground mb-4">No events created yet.</p>
-                  <Button asChild>
-                    <Link href="/events/create">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create an event
-                    </Link>
-                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Create events from within a community you manage above.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
