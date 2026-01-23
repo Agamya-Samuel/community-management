@@ -19,7 +19,7 @@ import { ReviewForm } from "../online-event/review";
  */
 interface HackathonEventFormProps {
   userId: string;
-  communityId?: number; // Optional - if provided, event will be associated with this community
+  communityId: number; // Required - events must be created within a community
   eventId?: string; // Optional - if provided, form is in edit mode
   initialData?: Partial<HackathonEventFormData>; // Optional - pre-filled data for editing
 }
@@ -131,7 +131,7 @@ export function HackathonEventForm({ userId, communityId, eventId, initialData }
           eventType: "hackathon",
           data: {
             ...formData,
-            communityId: communityId, // Include communityId if provided
+            communityId: communityId, // Required - events must be linked to a community
           },
           status: "draft",
         }),
@@ -169,7 +169,7 @@ export function HackathonEventForm({ userId, communityId, eventId, initialData }
           eventType: "hackathon",
           data: {
             ...formData,
-            communityId: communityId, // Include communityId if provided
+            communityId: communityId, // Required - events must be linked to a community
           },
           status: "published",
         }),

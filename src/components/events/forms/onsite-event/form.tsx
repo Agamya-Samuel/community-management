@@ -19,7 +19,7 @@ import { ReviewForm } from "../online-event/review";
  */
 interface OnsiteEventFormProps {
   userId: string;
-  communityId?: number; // Optional - if provided, event will be associated with this community
+  communityId: number; // Required - events must be created within a community
   eventId?: string; // Optional - if provided, form is in edit mode
   initialData?: Partial<OnsiteEventFormData>; // Optional - pre-filled data for editing
 }
@@ -104,7 +104,7 @@ export function OnsiteEventForm({ userId, communityId, eventId, initialData }: O
           eventType: "onsite",
           data: {
             ...formData,
-            communityId: communityId, // Include communityId if provided
+            communityId: communityId, // Required - events must be linked to a community
           },
           status: "draft",
         }),
@@ -142,7 +142,7 @@ export function OnsiteEventForm({ userId, communityId, eventId, initialData }: O
           eventType: "onsite",
           data: {
             ...formData,
-            communityId: communityId, // Include communityId if provided
+            communityId: communityId, // Required - events must be linked to a community
           },
           status: "published",
         }),

@@ -19,7 +19,7 @@ import { ReviewForm } from "../online-event/review";
  */
 interface HybridEventFormProps {
   userId: string;
-  communityId?: number; // Optional - if provided, event will be associated with this community
+  communityId: number; // Required - events must be created within a community
   eventId?: string; // Optional - if provided, form is in edit mode
   initialData?: Partial<HybridEventFormData>; // Optional - pre-filled data for editing
 }
@@ -114,7 +114,7 @@ export function HybridEventForm({ userId, communityId, eventId, initialData }: H
           eventType: "hybrid",
           data: {
             ...formData,
-            communityId: communityId, // Include communityId if provided
+            communityId: communityId, // Required - events must be linked to a community
           },
           status: "draft",
         }),
@@ -152,7 +152,7 @@ export function HybridEventForm({ userId, communityId, eventId, initialData }: H
           eventType: "hybrid",
           data: {
             ...formData,
-            communityId: communityId, // Include communityId if provided
+            communityId: communityId, // Required - events must be linked to a community
           },
           status: "published",
         }),
