@@ -124,9 +124,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      message: "Email added successfully. Please check your email for verification link.",
-    });
+    // Redirect to dashboard after successfully sending verification email
+    return NextResponse.redirect(new URL("/dashboard", baseURL));
   } catch (error) {
     console.error("Add email error:", error);
     return NextResponse.json(
