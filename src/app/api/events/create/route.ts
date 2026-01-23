@@ -151,17 +151,26 @@ export async function POST(request: Request) {
 
     // Prepare event data for insertion
     // Map form fields to database schema fields
-    // Convert communityId to number if provided (it might come as string from query params)
-    let communityId: number | null = null;
-    if (data.communityId !== undefined && data.communityId !== null) {
-      const parsedCommunityId = typeof data.communityId === "string" 
-        ? parseInt(data.communityId, 10) 
-        : Number(data.communityId);
-      // Only set if it's a valid number
-      if (!isNaN(parsedCommunityId)) {
-        communityId = parsedCommunityId;
-      }
+    // communityId is required - events must be linked to a community
+    if (!data.communityId) {
+      return NextResponse.json(
+        { error: "Community ID is required. Events must be created within a community." },
+        { status: 400 }
+      );
     }
+
+    const parsedCommunityId = typeof data.communityId === "string" 
+      ? parseInt(data.communityId, 10) 
+      : Number(data.communityId);
+    
+    if (isNaN(parsedCommunityId)) {
+      return NextResponse.json(
+        { error: "Invalid community ID. Community ID must be a valid number." },
+        { status: 400 }
+      );
+    }
+
+    const communityId = parsedCommunityId;
 
     const eventData = {
       eventId,
@@ -178,7 +187,7 @@ export async function POST(request: Request) {
       capacity: data.capacity || null,
       status: status || "published", // Use status from request, default to published
       primaryOrganizerId: userId,
-      communityId: communityId, // Optional - events can be created without a community
+      communityId: communityId, // Required - events must be linked to a community
       contactEmail: data.contactEmail,
       contactPhone: data.contactPhone || null,
       bannerUrl: data.bannerUrl || null,
