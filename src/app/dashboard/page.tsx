@@ -136,18 +136,6 @@ export default async function DashboardPage() {
                 </Link>
               </Button>
             )}
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/profile">
-                Profile
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/settings/account">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Link>
-            </Button>
-            <SignOutButton />
           </div>
         </div>
 
