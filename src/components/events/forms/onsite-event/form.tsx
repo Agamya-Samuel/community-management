@@ -64,6 +64,8 @@ interface OnsiteEventFormData {
   parkingAvailable: boolean;
   parkingInstructions: string;
   publicTransport: string;
+  latitude: number | null;
+  longitude: number | null;
 
   // Page 4: Media
   bannerUrl: string;
