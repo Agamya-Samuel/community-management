@@ -89,9 +89,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      message: "Verification email sent successfully",
-    });
+    // Redirect to dashboard after successfully sending verification email
+    return NextResponse.redirect(new URL("/dashboard", baseURL));
   } catch (error) {
     console.error("Send verification email error:", error);
     return NextResponse.json(
