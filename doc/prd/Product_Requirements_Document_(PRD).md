@@ -251,7 +251,7 @@ The design should evoke trust, growth, and community.
 * **Storage:** S3 (Amazon Simple Storage Service)
 * **Maps:** Google Maps API or Mapbox
 * **Payments:** Razorpay (India) & Stripe (Global)
-* **Email:** NodeMailer and Resend
+* **Email:** NodeMailer (SMTP)
 
 ### 8.2. Database Design Considerations
 

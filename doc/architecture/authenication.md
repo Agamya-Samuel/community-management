@@ -515,7 +515,7 @@ verificationTokens table:
 **Before Verification:**
 After entering their email, they see a message: "We've sent a verification email to editor@example.com. Please check your inbox and click the verification link to complete the process. The link will expire in 24 hours."
 
-Their profile shows the email as "Pending verification" with options to "Resend verification email" or "Change email address".
+Their profile shows the email as "Pending verification" with options to "Request new verification email" or "Change email address".
 
 **After Verification:**
 When they click the verification link in their email, they're redirected to a success page: "Email verified successfully! Your email editor@example.com is now confirmed." Their profile now shows the email as verified, and they can receive email notifications for events and other platform activities.
@@ -1006,7 +1006,7 @@ async function handleMediaWikiCallback(code: string, state: string) {
   - "Skip for now" option (but encourage email addition)
 - **Email Verification**: 
   - Clear instructions to check email
-  - Resend verification option
+  - Request new verification email option
   - Option to change email if they made a mistake
 - **After Verification**: Congratulations message and redirect to dashboard
 
@@ -1015,7 +1015,7 @@ async function handleMediaWikiCallback(code: string, state: string) {
 Profile Information
 ├─ Display Name: [John Doe] ✏️
 ├─ Email: john.doe@gmail.com ✅ Verified
-│  └─ (or) editor@example.com ⏳ Pending verification [Resend]
+│  └─ (or) editor@example.com ⏳ Pending verification [Request New]
 │  └─ (or) [Add Email Address] (for MediaWiki users)
 ├─ Sign-In Methods:
 │  ├─ Email/Password: ✅ Active [Change Password]

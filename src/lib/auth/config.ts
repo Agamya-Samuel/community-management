@@ -4,11 +4,7 @@ import { genericOAuth } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { Resend } from "resend";
-
-// Initialize Resend for email sending
-// Make sure RESEND_API_KEY is set in environment variables
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+import { sendVerificationEmail } from "@/lib/email/service";
 
 // Validate required environment variables
 if (!process.env.BETTER_AUTH_SECRET && !process.env.AUTH_SECRET) {
@@ -139,38 +135,15 @@ export const auth = betterAuth({
   emailVerification: {
     // Function to send verification emails
     sendVerificationEmail: async ({ user, url }) => {
-      if (!resend) {
-        console.error("Resend API key not configured. Cannot send verification email.");
+      if (!user.email) {
+        console.error("User email not available. Cannot send verification email.");
         return;
       }
 
-      // Send verification email using Resend
-      try {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || "noreply@example.com",
-          to: user.email || "",
-          subject: "Verify your email address",
-          html: `
-            <h1>Verify your email address</h1>
-            <p>Hello ${user.name || "there"},</p>
-            <p>Please verify your email address by clicking the link below:</p>
-            <p><a href="${url}">${url}</a></p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you didn't request this verification, please ignore this email.</p>
-          `,
-          text: `
-            Hello ${user.name || "there"},
-            
-            Please verify your email address by clicking the link below:
-            ${url}
-            
-            This link will expire in 24 hours.
-            
-            If you didn't request this verification, please ignore this email.
-          `,
-        });
-      } catch (error) {
-        console.error("Failed to send verification email:", error);
+      // Send verification email using email service
+      const result = await sendVerificationEmail(user.email, user.name, url);
+      if (!result.success) {
+        console.error("Failed to send verification email:", result.error);
         // Don't throw - better-auth will handle the error
       }
     },

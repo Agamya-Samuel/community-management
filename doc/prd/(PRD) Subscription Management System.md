@@ -590,8 +590,7 @@ const session = await stripe.checkout.sessions.create({
 8. Subscription Expired
 
 **Stack:**
-- NodeMailer for sending
-- Resend for deliverability
+- NodeMailer (SMTP) for sending
 - HTML templates with branding
 
 ---

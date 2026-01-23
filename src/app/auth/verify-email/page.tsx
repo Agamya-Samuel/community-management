@@ -83,7 +83,7 @@ export default async function VerifyEmailPage({
               ) : error ? (
                 <>
                   <Button asChild className="w-full">
-                    <Link href="/auth/resend-verification">Resend Verification Email</Link>
+                    <Link href="/auth/resend-verification">Request New Verification Email</Link>
                   </Button>
                   <Button variant="outline" asChild className="w-full">
                     <Link href="/auth/login">Back to Login</Link>

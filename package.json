@@ -63,7 +63,7 @@
     "react-hook-form": "^7.71.0",
     "react-resizable-panels": "^4.3.3",
     "recharts": "^3.6.0",
-    "resend": "^6.7.0",
+    "nodemailer": "^6.9.16",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
@@ -73,6 +73,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20.19.28",
+    "@types/nodemailer": "^6.4.14",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "1.0.0",

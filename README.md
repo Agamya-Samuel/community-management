@@ -63,7 +63,7 @@ A scalable, hierarchy-based community management platform that empowers users to
 - **Storage:** Amazon S3
 - **Maps:** Google Maps API / Mapbox
 - **Payments:** Razorpay (India) & Stripe (Global)
-- **Email:** NodeMailer & Resend
+- **Email:** NodeMailer (SMTP)
 - **Styling:** Tailwind CSS
 
 ---
@@ -125,8 +125,12 @@ RAZORPAY_KEY_SECRET="your-razorpay-key-secret"
 STRIPE_PUBLIC_KEY="your-stripe-public-key"
 STRIPE_SECRET_KEY="your-stripe-secret-key"
 
-# Email
-RESEND_API_KEY="your-resend-api-key"
+# Email (SMTP)
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_USER="your-smtp-username"
+SMTP_PASSWORD="your-smtp-password"
+SMTP_FROM_EMAIL="noreply@example.com"
 ```
 
 4. Set up the database:
