@@ -153,7 +153,7 @@ export default async function OrganizerDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Managed communities
+                Manage communities
               </CardTitle>
               <CardDescription>Communities where you have an admin role</CardDescription>
             </CardHeader>
@@ -235,7 +235,7 @@ export default async function OrganizerDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                Your events
+                Manage events
               </CardTitle>
               <CardDescription>Recently created events where you are the primary organizer</CardDescription>
             </CardHeader>
