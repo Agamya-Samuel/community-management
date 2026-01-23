@@ -12,11 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, LogOut, LayoutDashboard, Shield } from "lucide-react"
+import { User, Settings, LogOut, LayoutDashboard, Shield, ShieldCheck } from "lucide-react"
 
 export function UserAvatar() {
   const [user, setUser] = useState<{ name?: string | null; email?: string | null; image?: string | null } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -24,6 +25,17 @@ export function UserAvatar() {
         const session = await authClient.getSession()
         if (session?.data?.user) {
           setUser(session.data.user)
+          
+          // Check if user is admin
+          try {
+            const response = await fetch("/api/auth/check-admin")
+            if (response.ok) {
+              const data = await response.json()
+              setIsAdmin(data.isAdmin || false)
+            }
+          } catch (error) {
+            console.error("Error checking admin status:", error)
+          }
         }
       } catch (error) {
         console.error("Error fetching session:", error)
@@ -101,6 +113,14 @@ export function UserAvatar() {
             Organizer dashboard
           </Link>
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin/subscription-requests" className="cursor-pointer">
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Admin Panel
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link href="/dashboard/profile" className="cursor-pointer">
             <User className="mr-2 h-4 w-4" />
