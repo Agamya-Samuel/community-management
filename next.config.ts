@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "wikiclubtechshuats.org",
       },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
+      }
     ],
   },
 };
