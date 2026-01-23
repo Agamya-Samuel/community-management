@@ -13,10 +13,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion";
 import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
 import { Crown } from "lucide-react";
@@ -67,16 +66,22 @@ export default async function DashboardPage() {
     redirect("/auth/complete-profile");
   }
 
-  // Fetch all communities where user has admin role (owner, organizer, etc.)
-  // Users who create a community automatically become owners (stored in communityAdmins table)
-  const adminCommunities = await db
+  // Fetch communities where user is a regular member (via event registrations)
+  // This dashboard is for users who join events/communities, NOT for organizers
+  // Exclude communities where user has admin role (those should be in organizer dashboard)
+  
+  // Get all community IDs where user has admin role (to exclude them)
+  const adminCommunityIds = await db
+    .select({ communityId: schema.communityAdmins.communityId })
+    .from(schema.communityAdmins)
+    .where(eq(schema.communityAdmins.userId, user.id));
+
+  const adminCommunityIdSet = new Set(adminCommunityIds.map(a => a.communityId));
+
+  // Get distinct communities where user has registered for events
+  // Use a subquery to get unique community IDs, then join with communities table
+  const memberCommunitiesRaw = await db
     .select({
-      // Admin relationship fields
-      adminId: schema.communityAdmins.id,
-      role: schema.communityAdmins.role,
-      adminCommunityId: schema.communityAdmins.communityId,
-      assignedAt: schema.communityAdmins.assignedAt,
-      // Community details
       communityId: schema.communities.id,
       communityName: schema.communities.name,
       communityDescription: schema.communities.description,
@@ -84,31 +89,52 @@ export default async function DashboardPage() {
       parentCommunityId: schema.communities.parentCommunityId,
       communityCreatedAt: schema.communities.createdAt,
       communityUpdatedAt: schema.communities.updatedAt,
+      joinedAt: schema.eventRegistrations.joinedAt,
     })
-    .from(schema.communityAdmins)
+    .from(schema.eventRegistrations)
     .innerJoin(
       schema.communities,
-      eq(schema.communityAdmins.communityId, schema.communities.id)
+      eq(schema.eventRegistrations.communityId, schema.communities.id)
     )
-    .where(eq(schema.communityAdmins.userId, user.id))
-    .orderBy(desc(schema.communityAdmins.assignedAt));
+    .where(eq(schema.eventRegistrations.userId, user.id));
 
-  // Format communities for display
-  // Map the query result to match the expected structure used in the UI
-  const userCommunities = adminCommunities.map((item) => ({
-    id: item.adminId,
-    role: item.role,
-    communityId: item.communityId,
-    community: {
-      id: item.communityId,
-      name: item.communityName,
-      description: item.communityDescription,
-      photo: item.communityPhoto,
-      parentCommunityId: item.parentCommunityId,
-      createdAt: item.communityCreatedAt,
-      updatedAt: item.communityUpdatedAt,
-    },
-  }));
+  // Get unique communities (user might have multiple event registrations in same community)
+  // Group by community ID and keep the earliest joinedAt
+  const communityMap = new Map<number, typeof memberCommunitiesRaw[0]>();
+  for (const item of memberCommunitiesRaw) {
+    const existing = communityMap.get(item.communityId);
+    if (!existing || (item.joinedAt && existing.joinedAt && item.joinedAt < existing.joinedAt)) {
+      communityMap.set(item.communityId, item);
+    }
+  }
+
+  // Filter out communities where user is an admin/organizer
+  // Only show communities where user is a regular member
+  const userCommunities = Array.from(communityMap.values())
+    .filter(item => !adminCommunityIdSet.has(item.communityId))
+    .map((item) => ({
+      id: `member-${item.communityId}`, // Use a prefix to distinguish from admin entries
+      role: null, // Regular members don't have admin roles
+      communityId: item.communityId,
+      community: {
+        id: item.communityId,
+        name: item.communityName,
+        description: item.communityDescription,
+        photo: item.communityPhoto,
+        parentCommunityId: item.parentCommunityId,
+        createdAt: item.communityCreatedAt,
+        updatedAt: item.communityUpdatedAt,
+      },
+    }))
+    .sort((a, b) => {
+      // Sort by joinedAt if available (most recent first)
+      const aItem = Array.from(communityMap.values()).find(m => m.communityId === a.communityId);
+      const bItem = Array.from(communityMap.values()).find(m => m.communityId === b.communityId);
+      if (aItem?.joinedAt && bItem?.joinedAt) {
+        return bItem.joinedAt.getTime() - aItem.joinedAt.getTime();
+      }
+      return 0;
+    });
 
 
   return (
@@ -221,13 +247,6 @@ export default async function DashboardPage() {
                                 <ExternalLink className="w-3 h-3 ml-1" />
                               </Link>
                             </Button>
-                            {item.role && (
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={`/communities/${item.communityId}/manage`}>
-                                  Manage
-                                </Link>
-                              </Button>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
