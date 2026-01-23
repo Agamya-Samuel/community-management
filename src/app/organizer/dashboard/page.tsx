@@ -11,8 +11,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, ExternalLink, Plus, Users } from "lucide-react";
 import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion";
-import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
-import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { Crown } from "lucide-react";
 
 /**
@@ -21,8 +19,6 @@ import { Crown } from "lucide-react";
  * A central place for organizers to:
  * - Create/manage communities they administer
  * - Create/manage events they organize
- * 
- * Requires premium subscription to access (same as creating communities/events)
  */
 export default async function OrganizerDashboardPage() {
   const session = await auth.api.getSession({
@@ -34,24 +30,6 @@ export default async function OrganizerDashboardPage() {
   }
 
   const user = session.user;
-
-  // Check if user has active subscription
-  // This includes users with approved subscription requests (wikimedia_complimentary plan)
-  // Approved users get an active subscription with status "active" and valid endDate
-  const hasSubscription = await hasActiveSubscription(user.id);
-
-  // If no subscription, show subscription gate with appropriate mode
-  if (!hasSubscription) {
-    const gateType = getSubscriptionGateType(!!user.mediawikiUsername);
-
-    return (
-      <SubscriptionGate
-        feature="organizer dashboard"
-        action="Accessing the organizer dashboard"
-        gateType={gateType}
-      />
-    );
-  }
 
   // Profile completion checks (kept consistent with /dashboard)
   const fullUser = await db.query.users.findFirst({
@@ -138,29 +116,12 @@ export default async function OrganizerDashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {hasSubscription ? (
-              <Button variant="outline" asChild>
-                <Link href="/subscription/manage">
-                  <Crown className="w-4 h-4 mr-2" />
-                  Premium
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild>
-                <Link
-                  href={
-                    getSubscriptionGateType(!!user.mediawikiUsername) === "request"
-                      ? "/subscription/request"
-                      : "/subscription/upgrade"
-                  }
-                >
-                  <Crown className="w-4 h-4 mr-2" />
-                  {getSubscriptionGateType(!!user.mediawikiUsername) === "request"
-                    ? "Request Access"
-                    : "Upgrade to Premium"}
-                </Link>
-              </Button>
-            )}
+            <Button variant="outline" asChild>
+              <Link href="/subscription/manage">
+                <Crown className="w-4 h-4 mr-2" />
+                Premium
+              </Link>
+            </Button>
           </div>
         </div>
 
