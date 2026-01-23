@@ -4,7 +4,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { randomBytes } from "crypto";
-import { sendVerificationEmail, isEmailServiceConfigured } from "@/lib/email/service";
+import { sendVerificationEmail } from "@/lib/email/verification";
+import { isEmailServiceConfigured } from "@/lib/email";
 
 /**
  * Add email to MediaWiki user API route
@@ -110,7 +111,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Send verification email using email service
-    const result = await sendVerificationEmail(email, user.name, verificationUrl);
+    const result = await sendVerificationEmail({
+      to: email,
+      name: user.name,
+      verificationUrl,
+    });
     if (!result.success) {
       console.error("Failed to send verification email:", result.error);
       return NextResponse.json(
