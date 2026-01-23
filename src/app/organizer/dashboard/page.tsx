@@ -148,8 +148,10 @@ export default async function OrganizerDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Communities */}
-          <Card>
+          {/* Manage Communities and Events - Horizontal Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Communities */}
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
@@ -218,7 +220,7 @@ export default async function OrganizerDashboardPage() {
                           <Button size="sm" className="w-full" asChild>
                             <Link href={`/community/${item.communityId}/event/create`}>
                               <Plus className="w-4 h-4 mr-2" />
-                              Create event in this community
+                              Create event
                             </Link>
                           </Button>
                         </div>
@@ -228,10 +230,10 @@ export default async function OrganizerDashboardPage() {
                 </div>
               )}
             </CardContent>
-          </Card>
+            </Card>
 
-          {/* Events */}
-          <Card>
+            {/* Events */}
+            <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
@@ -292,7 +294,8 @@ export default async function OrganizerDashboardPage() {
                 </Button>
               </div>
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
