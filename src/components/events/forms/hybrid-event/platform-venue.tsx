@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { OpenStreetMap } from "@/components/maps/openstreetmap";
+import { geocodeAddress, buildAddressString } from "@/lib/geocoding";
+import { Loader2, MapPin } from "lucide-react";
 
 /**
  * Platform & Venue Form for Hybrid Events
@@ -42,6 +46,8 @@ interface HybridPlatformVenueData {
   parkingAvailable: boolean;
   parkingInstructions: string;
   publicTransport: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface HybridPlatformVenueFormProps {
@@ -123,7 +129,12 @@ export function HybridPlatformVenueForm({ data, onChange }: HybridPlatformVenueF
     parkingAvailable: data?.parkingAvailable ?? false,
     parkingInstructions: data?.parkingInstructions || "",
     publicTransport: data?.publicTransport || "",
+    latitude: data?.latitude ? parseFloat(String(data.latitude)) : null,
+    longitude: data?.longitude ? parseFloat(String(data.longitude)) : null,
   });
+
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [geocodingError, setGeocodingError] = useState<string | null>(null);
 
   /**
    * Update form data and notify parent
@@ -134,6 +145,88 @@ export function HybridPlatformVenueForm({ data, onChange }: HybridPlatformVenueF
     setFormData(updated);
     onChange(updated);
   };
+
+  /**
+   * Geocode address to get coordinates
+   */
+  const handleGeocode = useCallback(async () => {
+    // Build address string from form fields
+    const address = buildAddressString(
+      formData.addressLine1,
+      formData.addressLine2,
+      formData.city,
+      formData.state,
+      formData.postalCode,
+      formData.country
+    );
+
+    if (!address || address.trim().length === 0) {
+      setGeocodingError("Please fill in at least the address fields");
+      return;
+    }
+
+    setIsGeocoding(true);
+    setGeocodingError(null);
+
+    try {
+      // Add a small delay to respect rate limits (1 request per second)
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+
+      const result = await geocodeAddress(address);
+
+      if (result) {
+        console.log("Geocoding result:", result); // Debug log
+        // Update both fields in a single state update to avoid race conditions
+        const updated = {
+          ...formData,
+          latitude: result.latitude,
+          longitude: result.longitude,
+        };
+        setFormData(updated);
+        onChange(updated);
+        setGeocodingError(null);
+      } else {
+        setGeocodingError("Could not find coordinates for this address. Please try adjusting the address or set coordinates manually.");
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      setGeocodingError("Failed to geocode address. Please try again or set coordinates manually.");
+    } finally {
+      setIsGeocoding(false);
+    }
+  }, [formData.addressLine1, formData.addressLine2, formData.city, formData.state, formData.postalCode, formData.country]);
+
+  /**
+   * Handle map location change (when user clicks or drags marker)
+   */
+  const handleLocationChange = useCallback((lat: number, lng: number) => {
+    const updated = {
+      ...formData,
+      latitude: lat,
+      longitude: lng,
+    };
+    setFormData(updated);
+    onChange(updated);
+    setGeocodingError(null);
+  }, [formData, onChange]);
+
+  /**
+   * Auto-geocode when address fields are complete (debounced)
+   */
+  useEffect(() => {
+    // Only auto-geocode if we have essential address fields and no existing coordinates
+    const hasEssentialFields = formData.addressLine1 && formData.city && formData.state && formData.country;
+    const hasNoCoordinates = !formData.latitude || !formData.longitude;
+
+    if (hasEssentialFields && hasNoCoordinates) {
+      // Debounce: wait 2 seconds after user stops typing
+      const timer = setTimeout(() => {
+        handleGeocode();
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [formData.addressLine1, formData.city, formData.state, formData.country, formData.latitude, formData.longitude, handleGeocode]);
 
   /**
    * Extract meeting ID from Zoom link
@@ -459,6 +552,75 @@ export function HybridPlatformVenueForm({ data, onChange }: HybridPlatformVenueF
               onChange={(e) => updateField("floorNumber", e.target.value)}
               placeholder="e.g., 2nd Floor"
             />
+          </div>
+        </div>
+
+        {/* Map Section */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label>Location Map</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGeocode}
+              disabled={isGeocoding}
+            >
+              {isGeocoding ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Finding Location...
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-4 h-4 mr-2" />
+                  Find on Map
+                </>
+              )}
+            </Button>
+          </div>
+          {geocodingError && (
+            <p className="text-xs text-destructive">{geocodingError}</p>
+          )}
+          <div className="space-y-2">
+            <OpenStreetMap
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              onLocationChange={handleLocationChange}
+              height="400px"
+              zoom={15}
+              markerTitle={formData.venueName || "Event Location"}
+              interactive={true}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="latitude" className="text-xs">Latitude</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={formData.latitude ?? ""}
+                  onChange={(e) => updateField("latitude", e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="e.g., 28.6139"
+                  className="text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="longitude" className="text-xs">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={formData.longitude ?? ""}
+                  onChange={(e) => updateField("longitude", e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="e.g., 77.2090"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Click on the map or drag the marker to set the exact location. Coordinates are automatically updated.
+            </p>
           </div>
         </div>
 
