@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
+import { JoinCommunityButton } from "@/components/dashboard/join-community-button";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -67,48 +68,54 @@ export default async function DashboardPage() {
     redirect("/auth/complete-profile");
   }
 
-  // Fetch all communities where user has admin role (owner, organizer, etc.)
-  // Users who create a community automatically become owners (stored in communityAdmins table)
+  // Fetch all communities
+  const allCommunities = await db
+    .select()
+    .from(schema.communities)
+    .orderBy(desc(schema.communities.createdAt));
+
+  // Fetch communities where user has admin role
   const adminCommunities = await db
     .select({
-      // Admin relationship fields
       adminId: schema.communityAdmins.id,
       role: schema.communityAdmins.role,
-      adminCommunityId: schema.communityAdmins.communityId,
-      assignedAt: schema.communityAdmins.assignedAt,
-      // Community details
-      communityId: schema.communities.id,
-      communityName: schema.communities.name,
-      communityDescription: schema.communities.description,
-      communityPhoto: schema.communities.photo,
-      parentCommunityId: schema.communities.parentCommunityId,
-      communityCreatedAt: schema.communities.createdAt,
-      communityUpdatedAt: schema.communities.updatedAt,
+      communityId: schema.communityAdmins.communityId,
     })
     .from(schema.communityAdmins)
-    .innerJoin(
-      schema.communities,
-      eq(schema.communityAdmins.communityId, schema.communities.id)
-    )
-    .where(eq(schema.communityAdmins.userId, user.id))
-    .orderBy(desc(schema.communityAdmins.assignedAt));
+    .where(eq(schema.communityAdmins.userId, user.id));
 
-  // Format communities for display
-  // Map the query result to match the expected structure used in the UI
-  const userCommunities = adminCommunities.map((item) => ({
-    id: item.adminId,
-    role: item.role,
-    communityId: item.communityId,
-    community: {
-      id: item.communityId,
-      name: item.communityName,
-      description: item.communityDescription,
-      photo: item.communityPhoto,
-      parentCommunityId: item.parentCommunityId,
-      createdAt: item.communityCreatedAt,
-      updatedAt: item.communityUpdatedAt,
-    },
-  }));
+  // Fetch communities where user is a member
+  const memberCommunities = await db
+    .select({
+      memberId: schema.communityMembers.id,
+      role: schema.communityMembers.role,
+      communityId: schema.communityMembers.communityId,
+    })
+    .from(schema.communityMembers)
+    .where(eq(schema.communityMembers.userId, user.id));
+
+  // Create maps for quick lookup
+  const adminMap = new Map(adminCommunities.map(a => [a.communityId, a]));
+  const memberMap = new Map(memberCommunities.map(m => [m.communityId, m]));
+
+  // Format all communities with user's relationship
+  const communitiesWithStatus = allCommunities.map((community) => {
+    const admin = adminMap.get(community.id);
+    const member = memberMap.get(community.id);
+    
+    return {
+      id: community.id,
+      name: community.name,
+      description: community.description,
+      photo: community.photo,
+      parentCommunityId: community.parentCommunityId,
+      createdAt: community.createdAt,
+      updatedAt: community.updatedAt,
+      userRole: admin?.role || member?.role || null,
+      isAdmin: !!admin,
+      isMember: !!member || !!admin,
+    };
+  });
 
 
   return (
@@ -164,19 +171,14 @@ export default async function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {userCommunities.length === 0 ? (
+              {communitiesWithStatus.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">You haven&apos;t joined any communities yet</p>
+                  <p className="text-muted-foreground mb-2">No communities available yet</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Browse existing communities or create your own to start organizing events
+                    Create your own community to start organizing events
                   </p>
                   <div className="flex items-center justify-center gap-3">
-                    <Button variant="outline" asChild>
-                      <Link href="/communities">
-                        Browse Communities
-                      </Link>
-                    </Button>
                     <Button asChild>
                       <Link href="/communities/create">
                         <Plus className="w-4 h-4 mr-2" />
@@ -187,23 +189,33 @@ export default async function DashboardPage() {
                 </div>
               ) : (
                 <>
-                  {/* Show Browse Communities button when user has communities */}
-                  <div className="flex items-center justify-end mb-4">
-                    <Button variant="outline" asChild>
-                      <Link href="/communities">
-                        Browse Communities
-                      </Link>
-                    </Button>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-muted-foreground">
+                      {communitiesWithStatus.length} {communitiesWithStatus.length === 1 ? "community" : "communities"} available
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" asChild>
+                        <Link href="/communities">
+                          Browse All
+                        </Link>
+                      </Button>
+                      <Button asChild>
+                        <Link href="/communities/create">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Community
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userCommunities.map((item) => (
-                      <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                    {communitiesWithStatus.map((community) => (
+                      <Card key={community.id} className="hover:shadow-md transition-shadow overflow-hidden">
                         {/* Community Image */}
-                        {item.community?.photo ? (
+                        {community.photo ? (
                           <div className="w-full h-48 relative overflow-hidden bg-muted">
                             <Image
-                              src={item.community.photo}
-                              alt={item.community.name || "Community"}
+                              src={community.photo}
+                              alt={community.name || "Community"}
                               fill
                               className="object-cover"
                               unoptimized
@@ -217,28 +229,35 @@ export default async function DashboardPage() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h3 className="font-semibold text-foreground">
-                              {item.community?.name || "Community"}
+                              {community.name || "Community"}
                             </h3>
-                            <Badge variant={item.role ? "secondary" : "outline"}>
-                              {item.role || "Member"}
-                            </Badge>
+                            {community.userRole && (
+                              <Badge variant={community.isAdmin ? "secondary" : "outline"}>
+                                {community.userRole}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                            {item.community?.description || "No description"}
+                            {community.description || "No description"}
                           </p>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="flex-1" asChild>
-                              <Link href={`/communities/${item.communityId}`}>
-                                View
-                                <ExternalLink className="w-3 h-3 ml-1" />
-                              </Link>
-                            </Button>
-                            {item.role && (
+                            {community.isMember && (
+                              <Button variant="outline" size="sm" className="flex-1" asChild>
+                                <Link href={`/communities/${community.id}`}>
+                                  View
+                                  <ExternalLink className="w-3 h-3 ml-1" />
+                                </Link>
+                              </Button>
+                            )}
+                            {community.isAdmin && (
                               <Button variant="outline" size="sm" asChild>
-                                <Link href={`/communities/${item.communityId}/manage`}>
+                                <Link href={`/communities/${community.id}/manage`}>
                                   Manage
                                 </Link>
                               </Button>
+                            )}
+                            {!community.isMember && (
+                              <JoinCommunityButton communityId={community.id} />
                             )}
                           </div>
                         </CardContent>

@@ -290,12 +290,15 @@ export default async function CommunityDetailPage({
                         </Link>
                       </Button>
                     )}
-                    <Button variant="outline" asChild>
-                      <Link href={`/community/${communityId}/event/create`}>
-                        <Calendar className="w-4 h-4 mr-2" />
-                        Create Event
-                      </Link>
-                    </Button>
+                    {/* Only show Create Event button if user is the organizer */}
+                    {userRole === "organizer" && (
+                      <Button variant="outline" asChild>
+                        <Link href={`/community/${communityId}/event/create`}>
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Create Event
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>

@@ -1,5 +1,6 @@
 import { mysqlTable, varchar, text, timestamp, int } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
+import { users } from "./users";
 
 /**
  * Communities table
@@ -10,7 +11,7 @@ import { sql } from "drizzle-orm";
  * According to the architecture:
  * - Parent communities have parent_community_id = NULL
  * - Child communities have parent_community_id pointing to their parent
- * - Users who create a community automatically become owners
+ * - Users who create a community automatically become organizers
  */
 export const communities = mysqlTable("communities", {
   // Primary key - auto-incrementing integer
@@ -70,6 +71,40 @@ export const communityAdmins = mysqlTable("community_admins", {
   
   // When this admin role was assigned
   assignedAt: timestamp("assigned_at")
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+/**
+ * CommunityMembers table
+ * 
+ * Tracks which users have joined which communities.
+ * This is separate from communityAdmins because membership is about participation,
+ * while admin roles are about governance.
+ * 
+ * When a user joins a community, they become a member.
+ * Organizers can promote members to roles: co-organizer, envoy, core-team, volunteer
+ */
+export const communityMembers = mysqlTable("community_members", {
+  // Primary key - auto-incrementing integer
+  id: int("id").primaryKey().autoincrement(),
+  
+  // User ID - foreign key to users table
+  userId: varchar("user_id", { length: 255 })
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  
+  // Community ID - foreign key to communities table
+  communityId: int("community_id")
+    .notNull()
+    .references(() => communities.id, { onDelete: "cascade" }),
+  
+  // Member role - can be: member, co-organizer, envoy, core-team, volunteer
+  // Default is "member" for regular members
+  role: varchar("role", { length: 50 }).notNull().default("member"),
+  
+  // When the user joined the community
+  joinedAt: timestamp("joined_at")
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
 });
