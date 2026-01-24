@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, Users, ChevronDown } from "lucide-react";
+import { Settings, Users, UserCheck, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -58,6 +58,14 @@ export function ManageCommunityDropdown({
         >
           <Users className="w-4 h-4 mr-2" />
           Manage Administration
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => handleSectionChange("members")}
+          className={activeSection === "members" ? "bg-accent" : ""}
+        >
+          <UserCheck className="w-4 h-4 mr-2" />
+          View Members
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

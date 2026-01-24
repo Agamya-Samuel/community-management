@@ -5,8 +5,8 @@ import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscripti
 import { SubscriptionGate } from "@/components/subscription/subscription-gate";
 import { EventTypeSelection } from "@/components/events/event-type-selection";
 import { db } from "@/db";
-import { communities } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { communities, communityAdmins } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Event creation page within a community
@@ -56,6 +56,24 @@ export default async function CreateEventPage({ params }: CreateEventPageProps) 
   }
 
   const user = session.user;
+
+  // Check if user is the organizer of this community
+  // Only the organizer who created the community can create events
+  const adminResult = await db
+    .select({ role: communityAdmins.role })
+    .from(communityAdmins)
+    .where(
+      and(
+        eq(communityAdmins.userId, user.id),
+        eq(communityAdmins.communityId, communityId)
+      )
+    )
+    .limit(1);
+
+  if (adminResult.length === 0 || adminResult[0].role !== "organizer") {
+    // User is not the organizer, redirect to community page
+    redirect(`/communities/${communityId}`);
+  }
 
   // Check if user has active subscription
   const hasSubscription = await hasActiveSubscription(user.id);

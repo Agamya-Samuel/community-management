@@ -20,14 +20,14 @@ const createCommunitySchema = z.object({
 /**
  * POST /api/communities/create
  * 
- * Creates a new community and makes the creator the owner.
+ * Creates a new community and makes the creator the organizer.
  * 
  * According to the architecture:
  * - parent_community_id = NULL means it's a parent community
  * - parent_community_id = number means it's a child community (points to parent)
  * - Users with active subscriptions can create parent communities
- * - Users who are owners of a parent community can create child communities
- * - The creator automatically becomes the owner of the new community
+ * - Users who are organizers of a parent community can create child communities
+ * - The creator automatically becomes the organizer of the new community
  * - The system automatically detects parent vs child based on parent_community_id value
  */
 export async function POST(request: NextRequest) {
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Verify user is owner of parent community
-      // Only owners of the parent can create child communities
+      // Verify user is organizer of parent community
+      // Only organizers of the parent can create child communities
       // This prevents random users from creating unofficial chapters
       const adminResult = await db
         .select()
@@ -87,14 +87,14 @@ export async function POST(request: NextRequest) {
           and(
             eq(communityAdmins.userId, userId),
             eq(communityAdmins.communityId, validatedData.parentCommunityId),
-            eq(communityAdmins.role, "owner")
+            eq(communityAdmins.role, "organizer")
           )
         )
         .limit(1);
 
       if (adminResult.length === 0) {
         return NextResponse.json(
-          { error: "You must be the owner of the parent community to create a child community" },
+          { error: "You must be the organizer of the parent community to create a child community" },
           { status: 403 }
         );
       }
@@ -128,13 +128,13 @@ export async function POST(request: NextRequest) {
 
     const communityId = createdCommunity[0].id;
 
-    // Make the creator the owner of the new community
+    // Make the creator the organizer of the new community
     // This applies to both parent and child communities
-    // According to the architecture, users who create a community automatically become owners
+    // Users who create a community automatically become organizers
     await db.insert(communityAdmins).values({
       userId: userId,
       communityId: communityId,
-      role: "owner",
+      role: "organizer",
     });
 
     return NextResponse.json({
