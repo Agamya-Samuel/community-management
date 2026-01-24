@@ -153,10 +153,15 @@ export function VenueLocationForm({ data, onChange }: VenueLocationFormProps) {
    * Handle map location change (when user clicks or drags marker)
    */
   const handleLocationChange = useCallback((lat: number, lng: number) => {
-    updateField("latitude", lat);
-    updateField("longitude", lng);
+    const updated = {
+      ...formData,
+      latitude: lat,
+      longitude: lng,
+    };
+    setFormData(updated);
+    onChange(updated);
     setGeocodingError(null);
-  }, []);
+  }, [formData, onChange]);
 
   /**
    * Auto-geocode when address fields are complete (debounced)
