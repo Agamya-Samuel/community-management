@@ -5,41 +5,76 @@ import { useEffect, useRef, useState } from "react";
 // Dynamically import Leaflet only on client side
 let L: any;
 let leafletLoaded = false;
+let leafletLoadingPromise: Promise<any> | null = null;
 
 const loadLeaflet = async () => {
-  if (typeof window === "undefined" || leafletLoaded) return L;
+  if (typeof window === "undefined") return null;
   
-  try {
-    L = await import("leaflet");
-    
-    // Import CSS - check if already loaded
-    if (typeof document !== "undefined") {
-      const existingLink = document.querySelector('link[href*="leaflet.css"]');
-      if (!existingLink) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        link.crossOrigin = "anonymous";
-        document.head.appendChild(link);
-      }
-    }
-    
-    // Fix for default marker icons in Next.js
-    if (L.Icon && L.Icon.Default) {
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-      });
-    }
-    
-    leafletLoaded = true;
+  // If already loaded, return immediately
+  if (leafletLoaded && L) {
     return L;
-  } catch (error) {
-    console.error("Error loading Leaflet:", error);
-    throw error;
   }
+  
+  // If currently loading, wait for existing promise
+  if (leafletLoadingPromise) {
+    return leafletLoadingPromise;
+  }
+  
+  // Start loading
+  leafletLoadingPromise = (async () => {
+    try {
+      console.log("[Leaflet] Starting to load library...");
+      L = await import("leaflet");
+      console.log("[Leaflet] Library imported");
+      
+      // Import CSS - check if already loaded
+      if (typeof document !== "undefined") {
+        const existingLink = document.querySelector('link[href*="leaflet.css"]');
+        if (!existingLink) {
+          console.log("[Leaflet] Loading CSS...");
+          // Wait for CSS to load before continuing
+          await new Promise<void>((resolve, reject) => {
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+            link.crossOrigin = "anonymous";
+            link.onload = () => {
+              console.log("[Leaflet] CSS loaded");
+              resolve();
+            };
+            link.onerror = () => reject(new Error("Failed to load Leaflet CSS"));
+            document.head.appendChild(link);
+          });
+          
+          // Give browser time to apply CSS
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } else {
+          console.log("[Leaflet] CSS already loaded");
+        }
+      }
+      
+      // Fix for default marker icons in Next.js
+      if (L.Icon && L.Icon.Default) {
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+          iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+        });
+        console.log("[Leaflet] Marker icons configured");
+      }
+      
+      leafletLoaded = true;
+      console.log("[Leaflet] Fully loaded and ready");
+      return L;
+    } catch (error) {
+      console.error("[Leaflet] Error loading:", error);
+      leafletLoadingPromise = null; // Reset on error so it can be retried
+      throw error;
+    }
+  })();
+  
+  return leafletLoadingPromise;
 };
 
 interface OpenStreetMapProps {
@@ -85,15 +120,18 @@ export function OpenStreetMap({
 
     const load = async () => {
       try {
+        console.log("[OpenStreetMap] Starting to load Leaflet...");
         const leaflet = await loadLeaflet();
         if (leaflet) {
+          console.log("[OpenStreetMap] Leaflet loaded successfully");
           setLeafletReady(true);
         } else {
+          console.error("[OpenStreetMap] Leaflet loaded but returned null");
           setError("Failed to load Leaflet library");
           setIsLoading(false);
         }
       } catch (error) {
-        console.error("Failed to load Leaflet:", error);
+        console.error("[OpenStreetMap] Failed to load Leaflet:", error);
         setError("Failed to load map library");
         setIsLoading(false);
       }
@@ -111,6 +149,7 @@ export function OpenStreetMap({
     let mounted = true;
     let retryCount = 0;
     const maxRetries = 10;
+    let initTimeout: NodeJS.Timeout;
 
     const initializeMap = () => {
       if (!mounted) return;
@@ -119,14 +158,20 @@ export function OpenStreetMap({
 
       const container = mapContainerRef.current;
       
+      console.log("[OpenStreetMap] Attempting to initialize map, container dimensions:", {
+        width: container.offsetWidth,
+        height: container.offsetHeight,
+      });
+      
       // Check if container has dimensions
       if (container.offsetWidth === 0 || container.offsetHeight === 0) {
         if (retryCount < maxRetries) {
           retryCount++;
+          console.log(`[OpenStreetMap] Container not ready, retry ${retryCount}/${maxRetries}`);
           setTimeout(initializeMap, 100);
           return;
         } else {
-          console.warn("Map container not ready after retries");
+          console.error("[OpenStreetMap] Map container not ready after retries");
           setError("Map container not ready");
           setIsLoading(false);
           return;
@@ -134,11 +179,14 @@ export function OpenStreetMap({
       }
 
       try {
+        console.log("[OpenStreetMap] Creating map instance...");
         // Create map instance
         const center: [number, number] = latitude && longitude 
           ? [latitude, longitude] 
           : [0, 0];
         const initialZoom = latitude && longitude ? zoom : 2;
+
+        console.log("[OpenStreetMap] Map center:", center, "zoom:", initialZoom);
 
         const map = L.map(container, {
           center,
@@ -146,14 +194,43 @@ export function OpenStreetMap({
           zoomControl: true,
         });
 
+        console.log("[OpenStreetMap] Map instance created, adding tile layer...");
+
         // Add OpenStreetMap tile layer
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        const tileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
             '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           maxZoom: 19,
-        }).addTo(map);
+        });
+
+        tileLayer.on('loading', () => {
+          console.log("[OpenStreetMap] Tiles loading...");
+        });
+
+        tileLayer.on('load', () => {
+          console.log("[OpenStreetMap] Tiles loaded successfully");
+          // Clear the initialization timeout since tiles loaded
+          if (initTimeout) clearTimeout(initTimeout);
+        });
+
+        tileLayer.on('tileerror', (error: any) => {
+          console.error("[OpenStreetMap] Tile loading error:", error);
+        });
+
+        tileLayer.addTo(map);
 
         mapRef.current = map;
+        console.log("[OpenStreetMap] Map initialization complete");
+        
+        // Set a timeout to detect if tiles don't load
+        initTimeout = setTimeout(() => {
+          if (mapRef.current) {
+            console.warn("[OpenStreetMap] Tiles may not have loaded, but map is initialized");
+            // Force a resize/invalidate to trigger tile loading
+            mapRef.current.invalidateSize();
+          }
+        }, 3000);
+        
         setIsLoading(false);
         setError(null);
 
@@ -211,7 +288,7 @@ export function OpenStreetMap({
           }
         });
       } catch (error) {
-        console.error("Error initializing map:", error);
+        console.error("[OpenStreetMap] Error initializing map:", error);
         setError("Failed to initialize map");
         setIsLoading(false);
       }
@@ -223,6 +300,7 @@ export function OpenStreetMap({
     // Cleanup function
     return () => {
       mounted = false;
+      if (initTimeout) clearTimeout(initTimeout);
       clearTimeout(timer);
       if (mapRef.current) {
         try {
@@ -273,35 +351,36 @@ export function OpenStreetMap({
     }
   }, [isClient, leafletReady, isLoading, latitude, longitude, zoom, markerTitle, interactive, onLocationChange]);
 
-  if (!isClient || isLoading) {
+  if (!isClient) {
     return (
       <div
         style={{ height, width: "100%" }}
         className="rounded-lg border border-border overflow-hidden flex items-center justify-center bg-muted"
       >
-        <p className="text-sm text-muted-foreground">
-          {error || "Loading map..."}
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{ height, width: "100%" }}
-        className="rounded-lg border border-border overflow-hidden flex items-center justify-center bg-muted"
-      >
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-muted-foreground">Loading map...</p>
       </div>
     );
   }
 
   return (
-    <div
-      ref={mapContainerRef}
-      style={{ height, width: "100%" }}
-      className="rounded-lg border border-border overflow-hidden"
-    />
+    <div className="relative" style={{ height, width: "100%" }}>
+      <div
+        ref={mapContainerRef}
+        style={{ height: "100%", width: "100%" }}
+        className="rounded-lg border border-border overflow-hidden"
+      />
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 rounded-lg">
+          <p className="text-sm text-muted-foreground">
+            {error || "Loading map..."}
+          </p>
+        </div>
+      )}
+      {!isLoading && error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 rounded-lg">
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
+    </div>
   );
 }
