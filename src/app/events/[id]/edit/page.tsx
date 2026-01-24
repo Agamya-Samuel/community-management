@@ -208,6 +208,11 @@ export default async function EditEventPage({
       : {}),
   };
 
+  // Validate communityId exists (required for all events)
+  if (!eventData.communityId) {
+    notFound();
+  }
+
   // Render appropriate form based on event type
   // Pass eventId and initialData for editing
   if (eventData.eventType === "online") {
@@ -215,7 +220,7 @@ export default async function EditEventPage({
     return (
       <OnlineEventForm
         userId={user.id}
-        communityId={eventData.communityId || undefined}
+        communityId={eventData.communityId}
         eventId={eventId}
         initialData={initialData}
       />
@@ -227,7 +232,7 @@ export default async function EditEventPage({
     return (
       <OnsiteEventForm
         userId={user.id}
-        communityId={eventData.communityId || undefined}
+        communityId={eventData.communityId}
         eventId={eventId}
         initialData={initialData}
       />
@@ -239,7 +244,7 @@ export default async function EditEventPage({
     return (
       <HybridEventForm
         userId={user.id}
-        communityId={eventData.communityId || undefined}
+        communityId={eventData.communityId}
         eventId={eventId}
         initialData={initialData}
       />
@@ -251,7 +256,7 @@ export default async function EditEventPage({
     return (
       <HackathonEventForm
         userId={user.id}
-        communityId={eventData.communityId || undefined}
+        communityId={eventData.communityId}
         eventId={eventId}
         initialData={initialData}
       />

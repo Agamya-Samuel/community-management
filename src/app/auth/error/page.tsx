@@ -43,6 +43,7 @@ export default function AuthErrorPage() {
           </Card>
         </div>
       </div>
+      </div>
     );
   }
 
