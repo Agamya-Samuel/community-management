@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth/config";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events, onlineEventMetadata, onsiteEventMetadata, eventTags } from "@/db/schema";
+import { events, onlineEventMetadata, onsiteEventMetadata, eventTags, communityAdmins, communities } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 /**
@@ -159,6 +160,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Parse and validate communityId
     const parsedCommunityId = typeof data.communityId === "string" 
       ? parseInt(data.communityId, 10) 
       : Number(data.communityId);
@@ -172,6 +174,40 @@ export async function POST(request: Request) {
 
     const communityId = parsedCommunityId;
 
+    // Verify user is the organizer of this community
+    // Only users who created the community (organizers) can create events in that community
+    // Check if community exists
+    const communityResult = await db
+      .select()
+      .from(communities)
+      .where(eq(communities.id, communityId))
+      .limit(1);
+
+    if (communityResult.length === 0) {
+      return NextResponse.json(
+        { error: "Community not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if user is the organizer of this community
+    const adminResult = await db
+      .select({ role: communityAdmins.role })
+      .from(communityAdmins)
+      .where(
+        and(
+          eq(communityAdmins.userId, userId),
+          eq(communityAdmins.communityId, communityId)
+        )
+      )
+      .limit(1);
+
+    if (adminResult.length === 0 || adminResult[0].role !== "organizer") {
+      return NextResponse.json(
+        { error: "Only the organizer who created the community can create events in it" },
+        { status: 403 }
+      );
+    }
     const eventData = {
       eventId,
       eventType,

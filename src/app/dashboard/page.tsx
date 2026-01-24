@@ -8,13 +8,15 @@ import {
   Users,
   Settings,
   ExternalLink,
-  Calendar
+  Calendar,
+  Plus
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { JoinCommunityButton } from "@/components/dashboard/join-community-button";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { shouldRedirectToCompletion } from "@/lib/auth/utils/profile-completion";
 import { hasActiveSubscription, getSubscriptionGateType } from "@/lib/subscription/utils";
 import { Crown } from "lucide-react";
@@ -65,75 +67,54 @@ export default async function DashboardPage() {
     redirect("/auth/complete-profile");
   }
 
-  // Fetch communities where user is a regular member (via event registrations)
-  // This dashboard is for users who join events/communities, NOT for organizers
-  // Exclude communities where user has admin role (those should be in organizer dashboard)
-  
-  // Get all community IDs where user has admin role (to exclude them)
-  const adminCommunityIds = await db
-    .select({ communityId: schema.communityAdmins.communityId })
+  // Fetch all communities
+  const allCommunities = await db
+    .select()
+    .from(schema.communities)
+    .orderBy(desc(schema.communities.createdAt));
+
+  // Fetch communities where user has admin role
+  const adminCommunities = await db
+    .select({
+      adminId: schema.communityAdmins.id,
+      role: schema.communityAdmins.role,
+      communityId: schema.communityAdmins.communityId,
+    })
     .from(schema.communityAdmins)
     .where(eq(schema.communityAdmins.userId, user.id));
 
-  const adminCommunityIdSet = new Set(adminCommunityIds.map(a => a.communityId));
-
-  // Get distinct communities where user has registered for events
-  // Use a subquery to get unique community IDs, then join with communities table
-  const memberCommunitiesRaw = await db
+  // Fetch communities where user is a member
+  const memberCommunities = await db
     .select({
-      communityId: schema.communities.id,
-      communityName: schema.communities.name,
-      communityDescription: schema.communities.description,
-      communityPhoto: schema.communities.photo,
-      parentCommunityId: schema.communities.parentCommunityId,
-      communityCreatedAt: schema.communities.createdAt,
-      communityUpdatedAt: schema.communities.updatedAt,
-      joinedAt: schema.eventRegistrations.joinedAt,
+      memberId: schema.communityMembers.id,
+      role: schema.communityMembers.role,
+      communityId: schema.communityMembers.communityId,
     })
-    .from(schema.eventRegistrations)
-    .innerJoin(
-      schema.communities,
-      eq(schema.eventRegistrations.communityId, schema.communities.id)
-    )
-    .where(eq(schema.eventRegistrations.userId, user.id));
+    .from(schema.communityMembers)
+    .where(eq(schema.communityMembers.userId, user.id));
 
-  // Get unique communities (user might have multiple event registrations in same community)
-  // Group by community ID and keep the earliest joinedAt
-  const communityMap = new Map<number, typeof memberCommunitiesRaw[0]>();
-  for (const item of memberCommunitiesRaw) {
-    const existing = communityMap.get(item.communityId);
-    if (!existing || (item.joinedAt && existing.joinedAt && item.joinedAt < existing.joinedAt)) {
-      communityMap.set(item.communityId, item);
-    }
-  }
+  // Create maps for quick lookup
+  const adminMap = new Map(adminCommunities.map(a => [a.communityId, a]));
+  const memberMap = new Map(memberCommunities.map(m => [m.communityId, m]));
 
-  // Filter out communities where user is an admin/organizer
-  // Only show communities where user is a regular member
-  const userCommunities = Array.from(communityMap.values())
-    .filter(item => !adminCommunityIdSet.has(item.communityId))
-    .map((item) => ({
-      id: `member-${item.communityId}`, // Use a prefix to distinguish from admin entries
-      role: null, // Regular members don't have admin roles
-      communityId: item.communityId,
-      community: {
-        id: item.communityId,
-        name: item.communityName,
-        description: item.communityDescription,
-        photo: item.communityPhoto,
-        parentCommunityId: item.parentCommunityId,
-        createdAt: item.communityCreatedAt,
-        updatedAt: item.communityUpdatedAt,
-      },
-    }))
-    .sort((a, b) => {
-      // Sort by joinedAt if available (most recent first)
-      const aItem = Array.from(communityMap.values()).find(m => m.communityId === a.communityId);
-      const bItem = Array.from(communityMap.values()).find(m => m.communityId === b.communityId);
-      if (aItem?.joinedAt && bItem?.joinedAt) {
-        return bItem.joinedAt.getTime() - aItem.joinedAt.getTime();
-      }
-      return 0;
-    });
+  // Format all communities with user's relationship
+  const communitiesWithStatus = allCommunities.map((community) => {
+    const admin = adminMap.get(community.id);
+    const member = memberMap.get(community.id);
+    
+    return {
+      id: community.id,
+      name: community.name,
+      description: community.description,
+      photo: community.photo,
+      parentCommunityId: community.parentCommunityId,
+      createdAt: community.createdAt,
+      updatedAt: community.updatedAt,
+      userRole: admin?.role || member?.role || null,
+      isAdmin: !!admin,
+      isMember: !!member || !!admin,
+    };
+  });
 
 
   return (
@@ -177,40 +158,51 @@ export default async function DashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {userCommunities.length === 0 ? (
+              {communitiesWithStatus.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">You haven&apos;t joined any communities yet</p>
+                  <p className="text-muted-foreground mb-2">No communities available yet</p>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Browse existing communities to discover and join exciting events
+                    Create your own community to start organizing events
                   </p>
                   <div className="flex items-center justify-center gap-3">
-                    <Button variant="outline" asChild>
-                      <Link href="/communities">
-                        Browse Communities
+                    <Button asChild>
+                      <Link href="/communities/create">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create My Community
                       </Link>
                     </Button>
                   </div>
                 </div>
               ) : (
                 <>
-                  {/* Show Browse Communities button when user has communities */}
-                  <div className="flex items-center justify-end mb-4">
-                    <Button variant="outline" asChild>
-                      <Link href="/communities">
-                        Browse Communities
-                      </Link>
-                    </Button>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-muted-foreground">
+                      {communitiesWithStatus.length} {communitiesWithStatus.length === 1 ? "community" : "communities"} available
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" asChild>
+                        <Link href="/communities">
+                          Browse All
+                        </Link>
+                      </Button>
+                      <Button asChild>
+                        <Link href="/communities/create">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Community
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userCommunities.map((item) => (
-                      <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                    {communitiesWithStatus.map((community) => (
+                      <Card key={community.id} className="hover:shadow-md transition-shadow overflow-hidden">
                         {/* Community Image */}
-                        {item.community?.photo ? (
+                        {community.photo ? (
                           <div className="w-full h-48 relative overflow-hidden bg-muted">
                             <Image
-                              src={item.community.photo}
-                              alt={item.community.name || "Community"}
+                              src={community.photo}
+                              alt={community.name || "Community"}
                               fill
                               className="object-cover"
                               unoptimized
@@ -224,22 +216,36 @@ export default async function DashboardPage() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h3 className="font-semibold text-foreground">
-                              {item.community?.name || "Community"}
+                              {community.name || "Community"}
                             </h3>
-                            <Badge variant={item.role ? "secondary" : "outline"}>
-                              {item.role || "Member"}
-                            </Badge>
+                            {community.userRole && (
+                              <Badge variant={community.isAdmin ? "secondary" : "outline"}>
+                                {community.userRole}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                            {item.community?.description || "No description"}
+                            {community.description || "No description"}
                           </p>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="flex-1" asChild>
-                              <Link href={`/communities/${item.communityId}`}>
-                                View
-                                <ExternalLink className="w-3 h-3 ml-1" />
-                              </Link>
-                            </Button>
+                            {community.isMember && (
+                              <Button variant="outline" size="sm" className="flex-1" asChild>
+                                <Link href={`/communities/${community.id}`}>
+                                  View
+                                  <ExternalLink className="w-3 h-3 ml-1" />
+                                </Link>
+                              </Button>
+                            )}
+                            {community.isAdmin && (
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/communities/${community.id}/manage`}>
+                                  Manage
+                                </Link>
+                              </Button>
+                            )}
+                            {!community.isMember && (
+                              <JoinCommunityButton communityId={community.id} />
+                            )}
                           </div>
                         </CardContent>
                       </Card>

@@ -11,6 +11,7 @@ import Link from "next/link";
 import { ManageCommunityDropdown } from "@/components/communities/manage-community-dropdown";
 import { EditCommunitySettings } from "@/components/communities/edit-community-settings";
 import { ManageAdministration } from "@/components/communities/manage-administration";
+import { ManageMembers } from "@/components/communities/manage-members";
 
 /**
  * Community management page
@@ -120,12 +121,15 @@ export default async function ManageCommunityPage({
             <CardTitle>
               {activeSection === "settings" && "Edit Community Settings"}
               {activeSection === "administration" && "Manage Administration"}
+              {activeSection === "members" && "Community Members"}
             </CardTitle>
             <CardDescription>
               {activeSection === "settings" &&
                 "Update your community's name, description, and photo."}
               {activeSection === "administration" &&
                 "Manage member roles and permissions. Promote or demote members to different administrative roles."}
+              {activeSection === "members" &&
+                "View all members who have joined this community."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -137,6 +141,12 @@ export default async function ManageCommunityPage({
             )}
             {activeSection === "administration" && (
               <ManageAdministration
+                communityId={communityId}
+                userRole={userRole}
+              />
+            )}
+            {activeSection === "members" && (
+              <ManageMembers
                 communityId={communityId}
                 userRole={userRole}
               />

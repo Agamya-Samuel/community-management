@@ -77,17 +77,18 @@ export async function PUT(
 
     const existingEvent = eventResult[0];
 
-    // Check if current user has organizer permissions
+    // Check if current user has permission to edit
     // User can edit if they are:
     // 1. Primary organizer of the event
-    // 2. Have organizer role in the community (owner, organizer, coorganizer, event_organizer)
+    // 2. Organizer of the community (only the user who created the community can edit events)
     let canEditEvent = false;
     
     // Check if user is primary organizer
     if (existingEvent.primaryOrganizerId === session.user.id) {
       canEditEvent = true;
     }
-    // Check if user has organizer role in the community
+    // Check if user is the organizer of the community
+    // Only the user who created the community (organizer) can edit events in that community
     else if (existingEvent.communityId) {
       const adminResult = await db
         .select({ role: communityAdmins.role })
@@ -102,9 +103,8 @@ export async function PUT(
       
       if (adminResult.length > 0) {
         const userRole = adminResult[0].role;
-        // Allow editing for owner, organizer, coorganizer, and event_organizer roles
-        const allowedRoles = ["owner", "organizer", "coorganizer", "event_organizer"];
-        if (allowedRoles.includes(userRole)) {
+        // Only organizer role can edit events (the user who created the community)
+        if (userRole === "organizer") {
           canEditEvent = true;
         }
       }
@@ -112,7 +112,7 @@ export async function PUT(
 
     if (!canEditEvent) {
       return NextResponse.json(
-        { error: "You don't have permission to edit this event" },
+        { error: "Only the organizer who created the community can edit events in it" },
         { status: 403 }
       );
     }
