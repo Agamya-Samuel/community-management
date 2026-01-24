@@ -11,7 +11,7 @@ import { OnlineEventForm } from "@/components/events/forms/online-event/form";
  * Handles different event types: online, onsite, hybrid, hackathon
  * Each event type has its own multi-page form with type-specific fields
  * 
- * Supports communityId query parameter to associate event with a community
+ * Requires communityId query parameter - events must be created within a community
  */
 interface CreateEventTypePageProps {
   params: Promise<{ type: string }>;
@@ -53,17 +53,17 @@ export default async function CreateEventTypePage({
   // Get event type from params
   const { type } = await params;
 
-  // Get communityId from search params if provided
-  // This allows events to be associated with a community when created from a community page
+  // Get communityId from search params - required for event creation
+  // Events must be created within a community
   const resolvedSearchParams = await Promise.resolve(searchParams);
   const communityId = resolvedSearchParams.communityId
     ? parseInt(resolvedSearchParams.communityId, 10)
     : undefined;
 
-  // Validate communityId if provided
-  if (communityId !== undefined && isNaN(communityId)) {
-    // Invalid communityId, ignore it
-    console.warn("Invalid communityId provided:", resolvedSearchParams.communityId);
+  // Validate communityId - required
+  if (!communityId || isNaN(communityId)) {
+    // No communityId provided, redirect to communities page
+    redirect("/communities");
   }
 
   // Validate event type - only 4 types supported
@@ -79,24 +79,24 @@ export default async function CreateEventTypePage({
   }
 
   // Render appropriate form based on event type
-  // Pass communityId to forms so they can include it in the form data
+  // Pass communityId to forms - required for event creation
   if (type === "online") {
-    return <OnlineEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <OnlineEventForm userId={user.id} communityId={communityId} />;
   }
 
   if (type === "onsite") {
     const { OnsiteEventForm } = await import("@/components/events/forms/onsite-event/form");
-    return <OnsiteEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <OnsiteEventForm userId={user.id} communityId={communityId} />;
   }
 
   if (type === "hybrid") {
     const { HybridEventForm } = await import("@/components/events/forms/hybrid-event/form");
-    return <HybridEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <HybridEventForm userId={user.id} communityId={communityId} />;
   }
 
   if (type === "hackathon") {
     const { HackathonEventForm } = await import("@/components/events/forms/hackathon-event/form");
-    return <HackathonEventForm userId={user.id} communityId={!isNaN(communityId!) ? communityId : undefined} />;
+    return <HackathonEventForm userId={user.id} communityId={communityId} />;
   }
 
   // Fallback - should not reach here

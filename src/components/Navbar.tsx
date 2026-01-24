@@ -1,13 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
+import { UserAvatar } from "@/components/UserAvatar"
+import { authClient } from "@/lib/auth/client"
 import { Zap, Menu, X } from "lucide-react"
 
 export function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const checkSession = async () => {
+            try {
+                const session = await authClient.getSession()
+                setIsLoggedIn(!!session?.data?.user)
+            } catch (error) {
+                console.error("Error fetching session:", error)
+                setIsLoggedIn(false)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        checkSession()
+    }, [])
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen)
@@ -29,26 +49,28 @@ export function Navbar() {
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-8">
-                        <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                            Features
-                        </a>
-                        <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-                            Pricing
-                        </a>
-                        <a href="#blog" className="text-muted-foreground hover:text-foreground transition-colors">
-                            Blog
-                        </a>
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href="/auth/login">Login</Link>
-                        </Button>
-                        <Button size="sm" asChild>
-                            <Link href="/auth/sign-up">Sign Up</Link>
-                        </Button>
+                        {!isLoading && (
+                            <>
+                                {isLoggedIn ? (
+                                    <UserAvatar />
+                                ) : (
+                                    <>
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link href="/auth/login">Login</Link>
+                                        </Button>
+                                        <Button size="sm" asChild>
+                                            <Link href="/auth/sign-up">Sign Up</Link>
+                                        </Button>
+                                    </>
+                                )}
+                            </>
+                        )}
                         <ModeToggle />
                     </div>
 
                     {/* Mobile Menu Toggle */}
                     <div className="flex md:hidden items-center space-x-4">
+                        {!isLoading && isLoggedIn && <UserAvatar />}
                         <ModeToggle />
                         <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Toggle menu">
                             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -61,35 +83,16 @@ export function Navbar() {
             {isMenuOpen && (
                 <div className="md:hidden border-t border-border bg-background">
                     <div className="container mx-auto px-4 py-4 space-y-4 flex flex-col">
-                        <a
-                            href="#features"
-                            className="text-muted-foreground hover:text-foreground transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Features
-                        </a>
-                        <a
-                            href="#pricing"
-                            className="text-muted-foreground hover:text-foreground transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Pricing
-                        </a>
-                        <a
-                            href="#blog"
-                            className="text-muted-foreground hover:text-foreground transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Blog
-                        </a>
-                        <div className="flex flex-col gap-2 mt-4">
-                            <Button variant="ghost" size="sm" asChild className="w-full justify-start">
-                                <Link href="/auth/login">Login</Link>
-                            </Button>
-                            <Button size="sm" asChild className="w-full justify-start">
-                                <Link href="/auth/sign-up">Sign Up</Link>
-                            </Button>
-                        </div>
+                        {!isLoading && !isLoggedIn && (
+                            <div className="flex flex-col gap-2 mt-4">
+                                <Button variant="ghost" size="sm" asChild className="w-full justify-start">
+                                    <Link href="/auth/login">Login</Link>
+                                </Button>
+                                <Button size="sm" asChild className="w-full justify-start">
+                                    <Link href="/auth/sign-up">Sign Up</Link>
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

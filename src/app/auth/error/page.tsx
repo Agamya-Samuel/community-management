@@ -28,8 +28,9 @@ export default function AuthErrorPage() {
   // Special handling for email_is_missing error (show brief message before redirect)
   if (error === "email_is_missing") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-md mx-auto">
           <Card className="shadow-lg border-0">
             <CardHeader className="text-center space-y-4">
               <CardTitle className="text-2xl font-semibold">Complete Your Profile</CardTitle>
@@ -42,13 +43,15 @@ export default function AuthErrorPage() {
           </Card>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <Card className="shadow-lg border-0">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md mx-auto">
+          <Card className="shadow-lg border-0">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-destructive" />
@@ -81,7 +84,8 @@ export default function AuthErrorPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   )

@@ -36,9 +36,8 @@ export function CompleteProfileForm({ user, redirectUrl = "/dashboard" }: Comple
       });
 
       if (response.ok) {
-        // After adding email, redirect to verify email page
-        // After verification, user will be redirected to dashboard
-        router.push("/auth/verify-email?email_added=true");
+        // After sending verification email, redirect to dashboard
+        router.push("/dashboard");
       } else {
         const error = await response.json().catch(() => ({ message: "Failed to add email" }));
         console.error("Failed to add email:", error);

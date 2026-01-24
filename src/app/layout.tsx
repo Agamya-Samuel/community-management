@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Playfair_Display, Source_Sans_3 } from "next/font/google"
 import { Suspense } from "react"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Navbar } from "@/components/Navbar"
 import "./globals.css"
 
 const playfairDisplay = Playfair_Display({
@@ -42,6 +43,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Navbar />
           <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
         </ThemeProvider>
       </body>

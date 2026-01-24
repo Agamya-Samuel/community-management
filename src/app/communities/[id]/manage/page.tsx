@@ -87,7 +87,7 @@ export default async function ManageCommunityPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
           <Button variant="ghost" asChild className="mb-4">

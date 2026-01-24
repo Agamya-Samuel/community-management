@@ -4,7 +4,7 @@ import { genericOAuth } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { sendVerificationEmail } from "@/lib/email/service";
+import { sendVerificationEmail } from "@/lib/email/verification";
 
 // Validate required environment variables
 if (!process.env.BETTER_AUTH_SECRET && !process.env.AUTH_SECRET) {
@@ -141,7 +141,11 @@ export const auth = betterAuth({
       }
 
       // Send verification email using email service
-      const result = await sendVerificationEmail(user.email, user.name, url);
+      const result = await sendVerificationEmail({
+        to: user.email,
+        name: user.name,
+        verificationUrl: url,
+      });
       if (!result.success) {
         console.error("Failed to send verification email:", result.error);
         // Don't throw - better-auth will handle the error

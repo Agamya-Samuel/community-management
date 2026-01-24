@@ -19,8 +19,9 @@ export default async function VerifyEmailPage({
   const error = params?.error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md mx-auto">
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center space-y-4">
             <div
@@ -99,6 +100,7 @@ export default async function VerifyEmailPage({
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

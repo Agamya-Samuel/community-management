@@ -55,11 +55,11 @@ export type EventType = typeof EVENT_TYPES[number]["value"];
  * User selects the type of event they want to create
  * Based on PRD: All event types start with this selection screen
  * 
- * If communityId is provided, events are created within that community
+ * Events must be created within a community
  * URL structure: /community/[id]/event/create/[type]
  */
 interface EventTypeSelectionProps {
-  communityId?: number;
+  communityId: number;
 }
 
 export function EventTypeSelection({ communityId }: EventTypeSelectionProps) {
@@ -69,7 +69,7 @@ export function EventTypeSelection({ communityId }: EventTypeSelectionProps) {
   /**
    * Handle continue button click
    * Navigate to the appropriate form based on selected event type
-   * Uses community-scoped URL if communityId is provided
+   * Uses community-scoped URL
    */
   const handleContinue = () => {
     if (!selectedType) {
@@ -77,13 +77,8 @@ export function EventTypeSelection({ communityId }: EventTypeSelectionProps) {
     }
 
     // Navigate to the form page with the selected event type
-    // If communityId is provided, use community-scoped URL
-    if (communityId) {
-      router.push(`/community/${communityId}/event/create/${selectedType}`);
-    } else {
-      // Fallback to old URL structure (for backward compatibility)
-      router.push(`/events/create/${selectedType}`);
-    }
+    // Events must be created within a community
+    router.push(`/community/${communityId}/event/create/${selectedType}`);
   };
 
   return (

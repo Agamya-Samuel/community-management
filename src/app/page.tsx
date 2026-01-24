@@ -5,14 +5,9 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, Users, CreditCard, BarChart3, Zap, Globe, MessageSquare, Star, ArrowRight, Play } from "lucide-react"
 import Link from "next/link"
 
-import { Navbar } from "@/components/Navbar"
-
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      {/* Navigation */}
-      <Navbar />
 
       {/* Hero Section */}
       <section className="relative py-12 md:py-20 lg:py-32 overflow-hidden">

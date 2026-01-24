@@ -5,8 +5,9 @@ import { CheckCircle } from "lucide-react"
 
 export default function SignUpSuccessPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md mx-auto">
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
@@ -45,6 +46,7 @@ export default function SignUpSuccessPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   )

@@ -22,6 +22,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { RegisterButton } from "@/components/events/register-button";
 import { ShareButton } from "@/components/events/share-button";
+import { EventMap } from "@/components/events/event-map";
 
 /**
  * Community-scoped Event Detail Page
@@ -204,6 +205,8 @@ export default async function CommunityEventDetailPage({
     postalCode: onsiteMetadata?.postalCode || null,
     country: onsiteMetadata?.country || null,
     googleMapsLink: onsiteMetadata?.googleMapsLink || null,
+    latitude: onsiteMetadata?.latitude || null,
+    longitude: onsiteMetadata?.longitude || null,
     // Media
     bannerUrl: eventData.bannerUrl || null,
     thumbnailUrl: eventData.thumbnailUrl || null,
@@ -248,7 +251,7 @@ export default async function CommunityEventDetailPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button - Link back to community */}
         <Button variant="ghost" asChild className="mb-6">
           <Link href={`/communities/${communityId}`}>
@@ -425,25 +428,35 @@ export default async function CommunityEventDetailPage({
                     Venue
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <p className="font-medium">{event.venueName}</p>
-                  {event.addressLine1 && (
-                    <p className="text-sm text-muted-foreground">
-                      {event.addressLine1}
-                      {event.addressLine2 && `, ${event.addressLine2}`}
-                      {event.city && `, ${event.city}`}
-                      {event.state && `, ${event.state}`}
-                      {event.postalCode && ` ${event.postalCode}`}
-                      {event.country && `, ${event.country}`}
-                    </p>
-                  )}
-                  {event.googleMapsLink && (
-                    <Button asChild variant="outline" size="sm">
-                      <a href={event.googleMapsLink} target="_blank" rel="noopener noreferrer">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        View on Map
-                      </a>
-                    </Button>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="font-medium">{event.venueName}</p>
+                    {event.addressLine1 && (
+                      <p className="text-sm text-muted-foreground">
+                        {event.addressLine1}
+                        {event.addressLine2 && `, ${event.addressLine2}`}
+                        {event.city && `, ${event.city}`}
+                        {event.state && `, ${event.state}`}
+                        {event.postalCode && ` ${event.postalCode}`}
+                        {event.country && `, ${event.country}`}
+                      </p>
+                    )}
+                    {event.googleMapsLink && (
+                      <Button asChild variant="outline" size="sm">
+                        <a href={event.googleMapsLink} target="_blank" rel="noopener noreferrer">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          View on Google Maps
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                  {/* Map Display */}
+                  {(event.latitude && event.longitude) && (
+                    <EventMap
+                      latitude={event.latitude}
+                      longitude={event.longitude}
+                      venueName={event.venueName}
+                    />
                   )}
                 </CardContent>
               </Card>

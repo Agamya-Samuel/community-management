@@ -7,13 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Users,
   Settings,
-  Plus,
   ExternalLink,
-  Calendar
+  Calendar,
+  Plus
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { JoinCommunityButton } from "@/components/dashboard/join-community-button";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -120,7 +119,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -143,22 +142,10 @@ export default async function DashboardPage() {
                 </Link>
               </Button>
             )}
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/profile">
-                Profile
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard/settings/account">
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Link>
-            </Button>
-            <SignOutButton />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Community Section */}
           <Card>
             <CardHeader>
@@ -167,7 +154,7 @@ export default async function DashboardPage() {
                 Community
               </CardTitle>
               <CardDescription>
-                Browse existing communities or create your own
+                Browse existing communities and join events
               </CardDescription>
             </CardHeader>
             <CardContent>

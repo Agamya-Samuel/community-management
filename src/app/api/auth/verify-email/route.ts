@@ -56,10 +56,9 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // Redirect to success page
-    return NextResponse.redirect(
-      new URL("/auth/verify-email?success=true", request.url)
-    );
+    // Redirect to dashboard after successful verification
+    const baseURL = process.env.BETTER_AUTH_URL || process.env.AUTH_URL || "http://localhost:3000";
+    return NextResponse.redirect(new URL("/dashboard", baseURL));
   } catch (error) {
     console.error("Email verification error:", error);
     return NextResponse.redirect(
